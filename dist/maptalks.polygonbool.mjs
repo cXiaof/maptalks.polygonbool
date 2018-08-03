@@ -7170,11 +7170,79 @@ var PolygonBool = function (_maptalks$Class) {
         return _this;
     }
 
+    PolygonBool.prototype.intersection = function intersection(geometry, targets) {
+        var _this2 = this;
+
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'intersection');
+            this._compositTargets(targets, function (targets) {
+                console.log(targets);
+                _this2.remove();
+            });
+            return this;
+        }
+    };
+
+    PolygonBool.prototype.union = function union(geometry, targets) {
+        var _this3 = this;
+
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'union');
+            this._compositTargets(targets, function (targets) {
+                console.log(targets);
+                _this3.remove();
+            });
+            return this;
+        }
+    };
+
+    PolygonBool.prototype.diff = function diff(geometry, targets) {
+        var _this4 = this;
+
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'diff');
+            this._compositTargets(targets, function (targets) {
+                console.log(targets);
+                _this4.remove();
+            });
+            return this;
+        }
+    };
+
+    PolygonBool.prototype.xor = function xor(geometry, targets) {
+        var _this5 = this;
+
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'xor');
+            this._compositTargets(targets, function (targets) {
+                console.log(targets);
+                _this5.remove();
+            });
+            return this;
+        }
+    };
+
     PolygonBool.prototype.submit = function submit() {
         var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {
             return false;
         };
 
+        switch (this._task) {
+            case 'intersection':
+                this._intersectionWithTargets();
+                break;
+            case 'union':
+                this._unionWithTargets();
+                break;
+            case 'diff':
+                this._diffWithTargets();
+                break;
+            case 'xor':
+                this._xorWithTargets();
+                break;
+            default:
+                break;
+        }
         callback(this._result, this._deals);
         this.remove();
     };
@@ -7198,8 +7266,25 @@ var PolygonBool = function (_maptalks$Class) {
         delete this._dblclick;
     };
 
-    PolygonBool.prototype._initialTaskWithGeo = function _initialTaskWithGeo(geometry) {
+    PolygonBool.prototype._checkAvailGeoType = function _checkAvailGeoType(geo) {
+        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon;
+    };
+
+    PolygonBool.prototype._compositTargets = function _compositTargets(targets) {
+        var success = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {
+            return false;
+        };
+        var error = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : function () {
+            return false;
+        };
+
+        if (this._checkAvailGeoType(targets)) targets = [targets];
+        if (targets instanceof Array && targets.length > 0) success(targets);else error(targets);
+    };
+
+    PolygonBool.prototype._initialTaskWithGeo = function _initialTaskWithGeo(geometry, task) {
         this._insureSafeTask();
+        this._task = task;
         this._savePrivateGeometry(geometry);
     };
 
@@ -7225,15 +7310,15 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._registerMapEvents = function _registerMapEvents() {
-        var _this2 = this;
+        var _this6 = this;
 
         if (!this._mousemove) {
             var _map = this._map;
             this._mousemove = function (e) {
-                return _this2._mousemoveEvents(e);
+                return _this6._mousemoveEvents(e);
             };
             this._click = function (e) {
-                return _this2._clickEvents(e);
+                return _this6._clickEvents(e);
             };
             _map.on('mousemove', this._mousemove, this);
             _map.on('click', this._click, this);
@@ -7249,13 +7334,13 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._mousemoveEvents = function _mousemoveEvents(e) {
-        var _this3 = this;
+        var _this7 = this;
 
         var geos = [];
         var coordSplit = this._getSafeCoords();
         this.layer.identify(e.coordinate).forEach(function (geo) {
-            var coord = _this3._getSafeCoords(geo);
-            if (!isEqual_1(coord, coordSplit) && geo instanceof maptalks.LineString) geos.push(geo);
+            var coord = _this7._getSafeCoords(geo);
+            if (!isEqual_1(coord, coordSplit) && _this7._checkAvailGeoType(geo)) geos.push(geo);
         });
         this._updateHitGeo(geos);
     };
@@ -7321,25 +7406,41 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit, hasTmp) {
-        var _this4 = this;
+        var _this8 = this;
 
         var chooseNext = [];
         this._chooseGeos.forEach(function (geo) {
-            var coord = _this4._getSafeCoords(geo);
+            var coord = _this8._getSafeCoords(geo);
             if (!isEqual_1(coordHit, coord)) chooseNext.push(geo);
         });
         if (!hasTmp && chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
     };
 
     PolygonBool.prototype._updateChooseGeos = function _updateChooseGeos() {
-        var _this5 = this;
+        var _this9 = this;
 
         var layer = this._chooseLayer;
         layer.clear();
         this._chooseGeos.forEach(function (geo) {
-            var chooseSymbol = _this5._getSymbolOrDefault(geo, 'Choose');
-            _this5._copyGeoUpdateSymbol(geo, chooseSymbol);
+            var chooseSymbol = _this9._getSymbolOrDefault(geo, 'Choose');
+            _this9._copyGeoUpdateSymbol(geo, chooseSymbol);
         });
+    };
+
+    PolygonBool.prototype._intersectionWithTargets = function _intersectionWithTargets() {
+        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    };
+
+    PolygonBool.prototype._unionWithTargets = function _unionWithTargets() {
+        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    };
+
+    PolygonBool.prototype._diffWithTargets = function _diffWithTargets() {
+        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    };
+
+    PolygonBool.prototype._xorWithTargets = function _xorWithTargets() {
+        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
     };
 
     return PolygonBool;

@@ -14,7 +14,67 @@ export class PolygonBool extends maptalks.Class {
         this._colorChoose = '#00bcd4'
     }
 
+    intersection(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'intersection')
+            this._compositTargets(targets, (targets) => {
+                console.log(targets)
+                this.remove()
+            })
+            return this
+        }
+    }
+
+    union(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'union')
+            this._compositTargets(targets, (targets) => {
+                console.log(targets)
+                this.remove()
+            })
+            return this
+        }
+    }
+
+    diff(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'diff')
+            this._compositTargets(targets, (targets) => {
+                console.log(targets)
+                this.remove()
+            })
+            return this
+        }
+    }
+
+    xor(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._initialTaskWithGeo(geometry, 'xor')
+            this._compositTargets(targets, (targets) => {
+                console.log(targets)
+                this.remove()
+            })
+            return this
+        }
+    }
+
     submit(callback = () => false) {
+        switch (this._task) {
+            case 'intersection':
+                this._intersectionWithTargets()
+                break
+            case 'union':
+                this._unionWithTargets()
+                break
+            case 'diff':
+                this._diffWithTargets()
+                break
+            case 'xor':
+                this._xorWithTargets()
+                break
+            default:
+                break
+        }
         callback(this._result, this._deals)
         this.remove()
     }
@@ -38,8 +98,19 @@ export class PolygonBool extends maptalks.Class {
         delete this._dblclick
     }
 
-    _initialTaskWithGeo(geometry) {
+    _checkAvailGeoType(geo) {
+        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon
+    }
+
+    _compositTargets(targets, success = () => false, error = () => false) {
+        if (this._checkAvailGeoType(targets)) targets = [targets]
+        if (targets instanceof Array && targets.length > 0) success(targets)
+        else error(targets)
+    }
+
+    _initialTaskWithGeo(geometry, task) {
         this._insureSafeTask()
+        this._task = task
         this._savePrivateGeometry(geometry)
     }
 
@@ -87,7 +158,7 @@ export class PolygonBool extends maptalks.Class {
         const coordSplit = this._getSafeCoords()
         this.layer.identify(e.coordinate).forEach((geo) => {
             const coord = this._getSafeCoords(geo)
-            if (!isEqual(coord, coordSplit) && geo instanceof maptalks.LineString) geos.push(geo)
+            if (!isEqual(coord, coordSplit) && this._checkAvailGeoType(geo)) geos.push(geo)
         })
         this._updateHitGeo(geos)
     }
@@ -171,6 +242,14 @@ export class PolygonBool extends maptalks.Class {
             this._copyGeoUpdateSymbol(geo, chooseSymbol)
         })
     }
+
+    _intersectionWithTargets(targets = this._chooseGeos) {}
+
+    _unionWithTargets(targets = this._chooseGeos) {}
+
+    _diffWithTargets(targets = this._chooseGeos) {}
+
+    _xorWithTargets(targets = this._chooseGeos) {}
 }
 
 PolygonBool.mergeOptions(options)
