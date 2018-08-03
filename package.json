@@ -9,7 +9,12 @@
     "url": "https://github.com/cXiaof/maptalks.polygonbool.git"
   },
   "main": "dist/maptalks.polygonbool.min.js",
-  "keywords": ["maptalks", "polygonbool", "boolean", "bool"],
+  "keywords": [
+    "maptalks",
+    "polygonbool",
+    "boolean",
+    "bool"
+  ],
   "bugs": {
     "url": "https://github.com/cXiaof/maptalks.polygonbool/issues"
   },
@@ -32,6 +37,7 @@
   },
   "dependencies": {
     "kld-intersections": "^0.4.2",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "martinez-polygon-clipping": "^0.4.3"
   }
 }
