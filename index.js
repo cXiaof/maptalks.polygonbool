@@ -1,4 +1,4 @@
-import * as martinez from 'martinez-polygon-clipping'
+import boolean from 'martinez-polygon-clipping'
 import { Point2D, Intersection } from 'kld-intersections'
 import isEqual from 'lodash/isEqual'
 
@@ -16,66 +16,51 @@ export class PolygonBool extends maptalks.Class {
 
     intersection(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'intersection')
-            this._compositTargets(targets, (targets) => {
-                console.log(targets)
+            this._initialTaskWithGeo(geometry, targets, 'intersection')
+            if (this._result) {
+                const result = this._result
                 this.remove()
-            })
-            return this
+                return result
+            }
         }
     }
 
     union(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'union')
-            this._compositTargets(targets, (targets) => {
-                console.log(targets)
+            this._initialTaskWithGeo(geometry, targets, 'union')
+            if (this._result) {
+                const result = this._result
                 this.remove()
-            })
-            return this
+                return result
+            }
         }
     }
 
     diff(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'diff')
-            this._compositTargets(targets, (targets) => {
-                console.log(targets)
+            this._initialTaskWithGeo(geometry, targets, 'diff')
+            if (this._result) {
+                const result = this._result
                 this.remove()
-            })
-            return this
+                return result
+            }
         }
     }
 
     xor(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'xor')
-            this._compositTargets(targets, (targets) => {
-                console.log(targets)
+            this._initialTaskWithGeo(geometry, targets, 'xor')
+            if (this._result) {
+                const result = this._result
                 this.remove()
-            })
-            return this
+                return result
+            }
         }
     }
 
     submit(callback = () => false) {
-        switch (this._task) {
-            case 'intersection':
-                this._intersectionWithTargets()
-                break
-            case 'union':
-                this._unionWithTargets()
-                break
-            case 'diff':
-                this._diffWithTargets()
-                break
-            case 'xor':
-                this._xorWithTargets()
-                break
-            default:
-                break
-        }
-        callback(this._result, this._deals)
+        this._dealWithTargets()
+        callback(this._result)
         this.remove()
     }
 
@@ -102,16 +87,16 @@ export class PolygonBool extends maptalks.Class {
         return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon
     }
 
-    _compositTargets(targets, success = () => false, error = () => false) {
-        if (this._checkAvailGeoType(targets)) targets = [targets]
-        if (targets instanceof Array && targets.length > 0) success(targets)
-        else error(targets)
-    }
-
-    _initialTaskWithGeo(geometry, task) {
+    _initialTaskWithGeo(geometry, targets, task) {
         this._insureSafeTask()
         this._task = task
         this._savePrivateGeometry(geometry)
+        this._compositTargetsAndDeal(targets)
+    }
+
+    _compositTargetsAndDeal(targets) {
+        if (this._checkAvailGeoType(targets)) targets = [targets]
+        if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
     }
 
     _insureSafeTask() {
@@ -209,10 +194,11 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _copyGeoUpdateSymbol(geo, symbol) {
-        return geo
-            .copy()
-            .updateSymbol(symbol)
-            .addTo(this._chooseLayer)
+        const coords = this._getSafeCoords(geo)
+        let result
+        if (geo instanceof maptalks.Polygon) result = new maptalks.Polygon(coords)
+        else result = new maptalks.MultiPolygon(coords)
+        return result.updateSymbol(symbol).addTo(this._chooseLayer)
     }
 
     _clickEvents(e) {
@@ -235,21 +221,55 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _updateChooseGeos() {
-        const layer = this._chooseLayer
-        layer.clear()
+        this._chooseLayer.clear()
         this._chooseGeos.forEach((geo) => {
             const chooseSymbol = this._getSymbolOrDefault(geo, 'Choose')
             this._copyGeoUpdateSymbol(geo, chooseSymbol)
         })
     }
 
-    _intersectionWithTargets(targets = this._chooseGeos) {}
+    _dealWithTargets(targets = this._chooseGeos) {
+        let result
+        targets.forEach((target) => {
+            if (result !== null) {
+                if (result) result = this._getBoolResultGeo(target, result)
+                else result = this._getBoolResultGeo(target)
+            }
+        })
+        this._result = result
+    }
 
-    _unionWithTargets(targets = this._chooseGeos) {}
+    _getBoolResultGeo(target, geo = this.geometry) {
+        let coords
+        try {
+            coords = boolean(
+                this._getGeoJSONCoords(geo),
+                this._getGeoJSONCoords(target),
+                this._getBoolType()
+            )
+        } catch (e) {}
+        const symbol = this.geometry.getSymbol()
+        const properties = this.geometry.getProperties()
+        if (!coords) return null
+        let result
+        if (coords.length === 1) result = new maptalks.Polygon(coords[0], { symbol, properties })
+        else result = new maptalks.MultiPolygon(coords, { symbol, properties })
+        return result
+    }
 
-    _diffWithTargets(targets = this._chooseGeos) {}
+    _getGeoJSONCoords(geo = this.geometry) {
+        return geo.toGeoJSON().geometry.coordinates
+    }
 
-    _xorWithTargets(targets = this._chooseGeos) {}
+    _getBoolType() {
+        const obj = {
+            intersection: 0,
+            union: 1,
+            diff: 2,
+            xor: 3
+        }
+        return obj[this._task]
+    }
 }
 
 PolygonBool.mergeOptions(options)

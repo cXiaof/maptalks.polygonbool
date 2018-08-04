@@ -640,9 +640,74 @@ function sort(keys, values, left, right, compare) {
 }
 
 var NORMAL = 0;
+var NON_CONTRIBUTING = 1;
+var SAME_TRANSITION = 2;
+var DIFFERENT_TRANSITION = 3;
 
+var INTERSECTION = 0;
+var UNION = 1;
 var DIFFERENCE = 2;
+var XOR = 3;
 
+/**
+ * @param  {SweepEvent} event
+ * @param  {SweepEvent} prev
+ * @param  {Operation} operation
+ */
+function computeFields(event, prev, operation) {
+  // compute inOut and otherInOut fields
+  if (prev === null) {
+    event.inOut = false;
+    event.otherInOut = true;
+
+    // previous line segment in sweepline belongs to the same polygon
+  } else {
+    if (event.isSubject === prev.isSubject) {
+      event.inOut = !prev.inOut;
+      event.otherInOut = prev.otherInOut;
+
+      // previous line segment in sweepline belongs to the clipping polygon
+    } else {
+      event.inOut = !prev.otherInOut;
+      event.otherInOut = prev.isVertical() ? !prev.inOut : prev.inOut;
+    }
+
+    // compute prevInResult field
+    if (prev) {
+      event.prevInResult = !inResult(prev, operation) || prev.isVertical() ? prev.prevInResult : prev;
+    }
+  }
+
+  // check if the line segment belongs to the Boolean operation
+  event.inResult = inResult(event, operation);
+}
+
+/* eslint-disable indent */
+function inResult(event, operation) {
+  switch (event.type) {
+    case NORMAL:
+      switch (operation) {
+        case INTERSECTION:
+          return !event.otherInOut;
+        case UNION:
+          return event.otherInOut;
+        case DIFFERENCE:
+          // return (event.isSubject && !event.otherInOut) ||
+          //         (!event.isSubject && event.otherInOut);
+          return event.isSubject && event.otherInOut || !event.isSubject && !event.otherInOut;
+        case XOR:
+          return true;
+      }
+      break;
+    case SAME_TRANSITION:
+      return operation === INTERSECTION || operation === UNION;
+    case DIFFERENT_TRANSITION:
+      return operation === DIFFERENCE;
+    case NON_CONTRIBUTING:
+      return false;
+  }
+  return false;
+}
 /* eslint-enable indent */
 
 function _classCallCheck$2(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -773,6 +838,17 @@ var SweepEvent = function () {
   return SweepEvent;
 }();
 
+function equals(p1, p2) {
+  if (p1[0] === p2[0]) {
+    if (p1[1] === p2[1]) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
+}
+
 // const EPSILON = 1e-9;
 // const abs = Math.abs;
 // TODO https://github.com/w8r/martinez/issues/6#issuecomment-262847164
@@ -833,6 +909,43 @@ function specialCases(e1, e2, p1, p2) {
 }
 /* eslint-enable no-unused-vars */
 
+/**
+ * @param  {SweepEvent} se
+ * @param  {Array.<Number>} p
+ * @param  {Queue} queue
+ * @return {Queue}
+ */
+function divideSegment(se, p, queue) {
+  var r = new SweepEvent(p, false, se, se.isSubject);
+  var l = new SweepEvent(p, true, se.otherEvent, se.isSubject);
+
+  /* eslint-disable no-console */
+  if (equals(se.point, se.otherEvent.point)) {
+
+    console.warn('what is that, a collapsed segment?', se);
+  }
+  /* eslint-enable no-console */
+
+  r.contourId = l.contourId = se.contourId;
+
+  // avoid a rounding error. The left event would be processed after the right event
+  if (compareEvents(l, se.otherEvent) > 0) {
+    se.otherEvent.left = true;
+    l.left = false;
+  }
+
+  // avoid a rounding error. The left event would be processed after the right event
+  // if (compareEvents(se, r) > 0) {}
+
+  se.otherEvent.otherEvent = l;
+  se.otherEvent = r;
+
+  queue.push(l);
+  queue.push(r);
+
+  return queue;
+}
+
 //const EPS = 1e-9;
 
 /**
@@ -844,6 +957,346 @@ function specialCases(e1, e2, p1, p2) {
  * @private
  * @returns {Number} The magnitude of the cross product
  */
+function crossProduct(a, b) {
+  return a[0] * b[1] - a[1] * b[0];
+}
+
+/**
+ * Finds the dot product of two vectors.
+ *
+ * @param {Object} a First vector
+ * @param {Object} b Second vector
+ * @private
+ * @returns {Number} The dot product
+ */
+function dotProduct(a, b) {
+  return a[0] * b[0] + a[1] * b[1];
+}
+
+/**
+ * Finds the intersection (if any) between two line segments a and b, given the
+ * line segments' end points a1, a2 and b1, b2.
+ *
+ * This algorithm is based on Schneider and Eberly.
+ * http://www.cimec.org.ar/~ncalvo/Schneider_Eberly.pdf
+ * Page 244.
+ *
+ * @param {Array.<Number>} a1 point of first line
+ * @param {Array.<Number>} a2 point of first line
+ * @param {Array.<Number>} b1 point of second line
+ * @param {Array.<Number>} b2 point of second line
+ * @param {Boolean=}       noEndpointTouch whether to skip single touchpoints
+ *                                         (meaning connected segments) as
+ *                                         intersections
+ * @returns {Array.<Array.<Number>>|Null} If the lines intersect, the point of
+ * intersection. If they overlap, the two end points of the overlapping segment.
+ * Otherwise, null.
+ */
+var intersection = function (a1, a2, b1, b2, noEndpointTouch) {
+  // The algorithm expects our lines in the form P + sd, where P is a point,
+  // s is on the interval [0, 1], and d is a vector.
+  // We are passed two points. P can be the first point of each pair. The
+  // vector, then, could be thought of as the distance (in x and y components)
+  // from the first point to the second point.
+  // So first, let's make our vectors:
+  var va = [a2[0] - a1[0], a2[1] - a1[1]];
+  var vb = [b2[0] - b1[0], b2[1] - b1[1]];
+  // We also define a function to convert back to regular point form:
+
+  /* eslint-disable arrow-body-style */
+
+  function toPoint(p, s, d) {
+    return [p[0] + s * d[0], p[1] + s * d[1]];
+  }
+
+  /* eslint-enable arrow-body-style */
+
+  // The rest is pretty much a straight port of the algorithm.
+  var e = [b1[0] - a1[0], b1[1] - a1[1]];
+  var kross = crossProduct(va, vb);
+  var sqrKross = kross * kross;
+  var sqrLenA = dotProduct(va, va);
+  //const sqrLenB  = dotProduct(vb, vb);
+
+  // Check for line intersection. This works because of the properties of the
+  // cross product -- specifically, two vectors are parallel if and only if the
+  // cross product is the 0 vector. The full calculation involves relative error
+  // to account for possible very small line segments. See Schneider & Eberly
+  // for details.
+  if (sqrKross > 0 /* EPS * sqrLenB * sqLenA */) {
+      // If they're not parallel, then (because these are line segments) they
+      // still might not actually intersect. This code checks that the
+      // intersection point of the lines is actually on both line segments.
+      var s = crossProduct(e, vb) / kross;
+      if (s < 0 || s > 1) {
+        // not on line segment a
+        return null;
+      }
+      var t = crossProduct(e, va) / kross;
+      if (t < 0 || t > 1) {
+        // not on line segment b
+        return null;
+      }
+      if (s === 0 || s === 1) {
+        // on an endpoint of line segment a
+        return noEndpointTouch ? null : [toPoint(a1, s, va)];
+      }
+      if (t === 0 || t === 1) {
+        // on an endpoint of line segment b
+        return noEndpointTouch ? null : [toPoint(b1, t, vb)];
+      }
+      return [toPoint(a1, s, va)];
+    }
+
+  // If we've reached this point, then the lines are either parallel or the
+  // same, but the segments could overlap partially or fully, or not at all.
+  // So we need to find the overlap, if any. To do that, we can use e, which is
+  // the (vector) difference between the two initial points. If this is parallel
+  // with the line itself, then the two lines are the same line, and there will
+  // be overlap.
+  //const sqrLenE = dotProduct(e, e);
+  kross = crossProduct(e, va);
+  sqrKross = kross * kross;
+
+  if (sqrKross > 0 /* EPS * sqLenB * sqLenE */) {
+      // Lines are just parallel, not the same. No overlap.
+      return null;
+    }
+
+  var sa = dotProduct(va, e) / sqrLenA;
+  var sb = sa + dotProduct(va, vb) / sqrLenA;
+  var smin = Math.min(sa, sb);
+  var smax = Math.max(sa, sb);
+
+  // this is, essentially, the FindIntersection acting on floats from
+  // Schneider & Eberly, just inlined into this function.
+  if (smin <= 1 && smax >= 0) {
+
+    // overlap on an end point
+    if (smin === 1) {
+      return noEndpointTouch ? null : [toPoint(a1, smin > 0 ? smin : 0, va)];
+    }
+
+    if (smax === 0) {
+      return noEndpointTouch ? null : [toPoint(a1, smax < 1 ? smax : 1, va)];
+    }
+
+    if (noEndpointTouch && smin === 0 && smax === 1) return null;
+
+    // There's overlap on a segment -- two points of intersection. Return both.
+    return [toPoint(a1, smin > 0 ? smin : 0, va), toPoint(a1, smax < 1 ? smax : 1, va)];
+  }
+
+  return null;
+};
+
+/**
+ * @param  {SweepEvent} se1
+ * @param  {SweepEvent} se2
+ * @param  {Queue}      queue
+ * @return {Number}
+ */
+function possibleIntersection(se1, se2, queue) {
+  // that disallows self-intersecting polygons,
+  // did cost us half a day, so I'll leave it
+  // out of respect
+  // if (se1.isSubject === se2.isSubject) return;
+  var inter = intersection(se1.point, se1.otherEvent.point, se2.point, se2.otherEvent.point);
+
+  var nintersections = inter ? inter.length : 0;
+  if (nintersections === 0) return 0; // no intersection
+
+  // the line segments intersect at an endpoint of both line segments
+  if (nintersections === 1 && (equals(se1.point, se2.point) || equals(se1.otherEvent.point, se2.otherEvent.point))) {
+    return 0;
+  }
+
+  if (nintersections === 2 && se1.isSubject === se2.isSubject) {
+    // if(se1.contourId === se2.contourId){
+    // console.warn('Edges of the same polygon overlap',
+    //   se1.point, se1.otherEvent.point, se2.point, se2.otherEvent.point);
+    // }
+    //throw new Error('Edges of the same polygon overlap');
+    return 0;
+  }
+
+  // The line segments associated to se1 and se2 intersect
+  if (nintersections === 1) {
+
+    // if the intersection point is not an endpoint of se1
+    if (!equals(se1.point, inter[0]) && !equals(se1.otherEvent.point, inter[0])) {
+      divideSegment(se1, inter[0], queue);
+    }
+
+    // if the intersection point is not an endpoint of se2
+    if (!equals(se2.point, inter[0]) && !equals(se2.otherEvent.point, inter[0])) {
+      divideSegment(se2, inter[0], queue);
+    }
+    return 1;
+  }
+
+  // The line segments associated to se1 and se2 overlap
+  var events = [];
+  var leftCoincide = false;
+  var rightCoincide = false;
+
+  if (equals(se1.point, se2.point)) {
+    leftCoincide = true; // linked
+  } else if (compareEvents(se1, se2) === 1) {
+    events.push(se2, se1);
+  } else {
+    events.push(se1, se2);
+  }
+
+  if (equals(se1.otherEvent.point, se2.otherEvent.point)) {
+    rightCoincide = true;
+  } else if (compareEvents(se1.otherEvent, se2.otherEvent) === 1) {
+    events.push(se2.otherEvent, se1.otherEvent);
+  } else {
+    events.push(se1.otherEvent, se2.otherEvent);
+  }
+
+  if (leftCoincide && rightCoincide || leftCoincide) {
+    // both line segments are equal or share the left endpoint
+    se2.type = NON_CONTRIBUTING;
+    se1.type = se2.inOut === se1.inOut ? SAME_TRANSITION : DIFFERENT_TRANSITION;
+
+    if (leftCoincide && !rightCoincide) {
+      // honestly no idea, but changing events selection from [2, 1]
+      // to [0, 1] fixes the overlapping self-intersecting polygons issue
+      divideSegment(events[1].otherEvent, events[0].point, queue);
+    }
+    return 2;
+  }
+
+  // the line segments share the right endpoint
+  if (rightCoincide) {
+    divideSegment(events[0], events[1].point, queue);
+    return 3;
+  }
+
+  // no line segment includes totally the other one
+  if (events[0] !== events[3].otherEvent) {
+    divideSegment(events[0], events[1].point, queue);
+    divideSegment(events[1], events[2].point, queue);
+    return 3;
+  }
+
+  // one line segment includes the other one
+  divideSegment(events[0], events[1].point, queue);
+  divideSegment(events[3].otherEvent, events[2].point, queue);
+
+  return 3;
+}
+
+/**
+ * @param  {SweepEvent} le1
+ * @param  {SweepEvent} le2
+ * @return {Number}
+ */
+function compareSegments(le1, le2) {
+  if (le1 === le2) return 0;
+
+  // Segments are not collinear
+  if (signedArea(le1.point, le1.otherEvent.point, le2.point) !== 0 || signedArea(le1.point, le1.otherEvent.point, le2.otherEvent.point) !== 0) {
+
+    // If they share their left endpoint use the right endpoint to sort
+    if (equals(le1.point, le2.point)) return le1.isBelow(le2.otherEvent.point) ? -1 : 1;
+
+    // Different left endpoint: use the left endpoint to sort
+    if (le1.point[0] === le2.point[0]) return le1.point[1] < le2.point[1] ? -1 : 1;
+
+    // has the line segment associated to e1 been inserted
+    // into S after the line segment associated to e2 ?
+    if (compareEvents(le1, le2) === 1) return le2.isAbove(le1.point) ? -1 : 1;
+
+    // The line segment associated to e2 has been inserted
+    // into S after the line segment associated to e1
+    return le1.isBelow(le2.point) ? -1 : 1;
+  }
+
+  if (le1.isSubject === le2.isSubject) {
+    // same polygon
+    var p1 = le1.point,
+        p2 = le2.point;
+    if (p1[0] === p2[0] && p1[1] === p2[1] /*equals(le1.point, le2.point)*/) {
+        p1 = le1.otherEvent.point;p2 = le2.otherEvent.point;
+        if (p1[0] === p2[0] && p1[1] === p2[1]) return 0;else return le1.contourId > le2.contourId ? 1 : -1;
+      }
+  } else {
+    // Segments are collinear, but belong to separate polygons
+    return le1.isSubject ? -1 : 1;
+  }
+
+  return compareEvents(le1, le2) === 1 ? 1 : -1;
+}
+
+function subdivide(eventQueue, subject, clipping, sbbox, cbbox, operation) {
+  var sweepLine = new SplayTree(compareSegments);
+  var sortedEvents = [];
+
+  var rightbound = Math.min(sbbox[2], cbbox[2]);
+
+  var prev = void 0,
+      next = void 0,
+      begin = void 0;
+
+  while (eventQueue.length !== 0) {
+    var event = eventQueue.pop();
+    sortedEvents.push(event);
+
+    // optimization by bboxes for intersection and difference goes here
+    if (operation === INTERSECTION && event.point[0] > rightbound || operation === DIFFERENCE && event.point[0] > sbbox[2]) {
+      break;
+    }
+
+    if (event.left) {
+      next = prev = sweepLine.insert(event);
+      begin = sweepLine.minNode();
+
+      if (prev !== begin) prev = sweepLine.prev(prev);else prev = null;
+
+      next = sweepLine.next(next);
+
+      var prevEvent = prev ? prev.key : null;
+      var prevprevEvent = void 0;
+      computeFields(event, prevEvent, operation);
+      if (next) {
+        if (possibleIntersection(event, next.key, eventQueue) === 2) {
+          computeFields(event, prevEvent, operation);
+          computeFields(event, next.key, operation);
+        }
+      }
+
+      if (prev) {
+        if (possibleIntersection(prev.key, event, eventQueue) === 2) {
+          var prevprev = prev;
+          if (prevprev !== begin) prevprev = sweepLine.prev(prevprev);else prevprev = null;
+
+          prevprevEvent = prevprev ? prevprev.key : null;
+          computeFields(prevEvent, prevprevEvent, operation);
+          computeFields(event, prevEvent, operation);
+        }
+      }
+    } else {
+      event = event.otherEvent;
+      next = prev = sweepLine.find(event);
+
+      if (prev && next) {
+
+        if (prev !== begin) prev = sweepLine.prev(prev);else prev = null;
+
+        next = sweepLine.next(next);
+        sweepLine.remove(event);
+
+        if (next && prev) {
+          possibleIntersection(prev.key, next.key, eventQueue);
+        }
+      }
+    }
+  }
+  return sortedEvents;
+}
 
 /**
  * @param  {Array.<SweepEvent>} sortedEvents
@@ -923,6 +1376,76 @@ function nextPos(pos, resultEvents, processed, origIndex) {
     newPos--;
   }
   return newPos;
+}
+
+/**
+ * @param  {Array.<SweepEvent>} sortedEvents
+ * @return {Array.<*>} polygons
+ */
+function connectEdges(sortedEvents, operation) {
+  var i = void 0,
+      len = void 0;
+  var resultEvents = orderEvents(sortedEvents);
+
+  // "false"-filled array
+  var processed = {};
+  var result = [];
+  var event = void 0;
+
+  for (i = 0, len = resultEvents.length; i < len; i++) {
+    if (processed[i]) continue;
+    var contour = [[]];
+
+    if (!resultEvents[i].isExteriorRing) {
+      if (operation === DIFFERENCE && !resultEvents[i].isSubject && result.length === 0) {
+        result.push(contour);
+      } else if (result.length === 0) {
+        result.push([[contour]]);
+      } else {
+        result[result.length - 1].push(contour[0]);
+      }
+    } else if (operation === DIFFERENCE && !resultEvents[i].isSubject && result.length > 1) {
+      result[result.length - 1].push(contour[0]);
+    } else {
+      result.push(contour);
+    }
+
+    var ringId = result.length - 1;
+    var pos = i;
+
+    var initial = resultEvents[i].point;
+    contour[0].push(initial);
+
+    while (pos >= i) {
+      event = resultEvents[pos];
+      processed[pos] = true;
+
+      if (event.left) {
+        event.resultInOut = false;
+        event.contourId = ringId;
+      } else {
+        event.otherEvent.resultInOut = true;
+        event.otherEvent.contourId = ringId;
+      }
+
+      pos = event.pos;
+      processed[pos] = true;
+      contour[0].push(resultEvents[pos].point);
+      pos = nextPos(pos, resultEvents, processed, i);
+    }
+
+    pos = pos === -1 ? i : pos;
+
+    event = resultEvents[pos];
+    processed[pos] = processed[event.pos] = true;
+    event.otherEvent.resultInOut = true;
+    event.otherEvent.contourId = ringId;
+  }
+
+  // Handle if the result is a polygon (eg not multipoly)
+  // Commented it again, let's see what do we mean by that
+  // if (result.length === 1) result = result[0];
+  return result;
 }
 
 var tinyqueue = TinyQueue;
@@ -1062,6 +1585,99 @@ function processPolygon(contourOrHole, isSubject, depth, Q, bbox, isExteriorRing
     Q.push(e1);
     Q.push(e2);
   }
+}
+
+function fillQueue(subject, clipping, sbbox, cbbox, operation) {
+  var eventQueue = new tinyqueue(null, compareEvents);
+  var polygonSet = void 0,
+      isExteriorRing = void 0,
+      i = void 0,
+      ii = void 0,
+      j = void 0,
+      jj = void 0; //, k, kk;
+
+  for (i = 0, ii = subject.length; i < ii; i++) {
+    polygonSet = subject[i];
+    for (j = 0, jj = polygonSet.length; j < jj; j++) {
+      isExteriorRing = j === 0;
+      if (isExteriorRing) contourId++;
+      processPolygon(polygonSet[j], true, contourId, eventQueue, sbbox, isExteriorRing);
+    }
+  }
+
+  for (i = 0, ii = clipping.length; i < ii; i++) {
+    polygonSet = clipping[i];
+    for (j = 0, jj = polygonSet.length; j < jj; j++) {
+      isExteriorRing = j === 0;
+      if (operation === DIFFERENCE) isExteriorRing = false;
+      if (isExteriorRing) contourId++;
+      processPolygon(polygonSet[j], false, contourId, eventQueue, cbbox, isExteriorRing);
+    }
+  }
+
+  return eventQueue;
+}
+
+var EMPTY = [];
+
+function trivialOperation(subject, clipping, operation) {
+  var result = null;
+  if (subject.length * clipping.length === 0) {
+    if (operation === INTERSECTION) {
+      result = EMPTY;
+    } else if (operation === DIFFERENCE) {
+      result = subject;
+    } else if (operation === UNION || operation === XOR) {
+      result = subject.length === 0 ? clipping : subject;
+    }
+  }
+  return result;
+}
+
+function compareBBoxes(subject, clipping, sbbox, cbbox, operation) {
+  var result = null;
+  if (sbbox[0] > cbbox[2] || cbbox[0] > sbbox[2] || sbbox[1] > cbbox[3] || cbbox[1] > sbbox[3]) {
+    if (operation === INTERSECTION) {
+      result = EMPTY;
+    } else if (operation === DIFFERENCE) {
+      result = subject;
+    } else if (operation === UNION || operation === XOR) {
+      result = subject.concat(clipping);
+    }
+  }
+  return result;
+}
+
+function boolean(subject, clipping, operation) {
+  if (typeof subject[0][0][0] === 'number') {
+    subject = [subject];
+  }
+  if (typeof clipping[0][0][0] === 'number') {
+    clipping = [clipping];
+  }
+  var trivial = trivialOperation(subject, clipping, operation);
+  if (trivial) {
+    return trivial === EMPTY ? null : trivial;
+  }
+  var sbbox = [Infinity, Infinity, -Infinity, -Infinity];
+  var cbbox = [Infinity, Infinity, -Infinity, -Infinity];
+
+  //console.time('fill queue');
+  var eventQueue = fillQueue(subject, clipping, sbbox, cbbox, operation);
+  //console.timeEnd('fill queue');
+
+  trivial = compareBBoxes(subject, clipping, sbbox, cbbox, operation);
+  if (trivial) {
+    return trivial === EMPTY ? null : trivial;
+  }
+  //console.time('subdivide edges');
+  var sortedEvents = subdivide(eventQueue, subject, clipping, sbbox, cbbox, operation);
+  //console.timeEnd('subdivide edges');
+
+  //console.time('connect vertices');
+  var result = connectEdges(sortedEvents, operation);
+  //console.timeEnd('connect vertices');
+  return result;
 }
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -7177,54 +7793,46 @@ var PolygonBool = function (_maptalks$Class) {
     }
 
     PolygonBool.prototype.intersection = function intersection(geometry, targets) {
-        var _this2 = this;
-
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'intersection');
-            this._compositTargets(targets, function (targets) {
-                console.log(targets);
-                _this2.remove();
-            });
-            return this;
+            this._initialTaskWithGeo(geometry, targets, 'intersection');
+            if (this._result) {
+                var result = this._result;
+                this.remove();
+                return result;
+            }
         }
     };
 
     PolygonBool.prototype.union = function union(geometry, targets) {
-        var _this3 = this;
-
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'union');
-            this._compositTargets(targets, function (targets) {
-                console.log(targets);
-                _this3.remove();
-            });
-            return this;
+            this._initialTaskWithGeo(geometry, targets, 'union');
+            if (this._result) {
+                var result = this._result;
+                this.remove();
+                return result;
+            }
         }
     };
 
     PolygonBool.prototype.diff = function diff(geometry, targets) {
-        var _this4 = this;
-
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'diff');
-            this._compositTargets(targets, function (targets) {
-                console.log(targets);
-                _this4.remove();
-            });
-            return this;
+            this._initialTaskWithGeo(geometry, targets, 'diff');
+            if (this._result) {
+                var result = this._result;
+                this.remove();
+                return result;
+            }
         }
     };
 
     PolygonBool.prototype.xor = function xor(geometry, targets) {
-        var _this5 = this;
-
         if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, 'xor');
-            this._compositTargets(targets, function (targets) {
-                console.log(targets);
-                _this5.remove();
-            });
-            return this;
+            this._initialTaskWithGeo(geometry, targets, 'xor');
+            if (this._result) {
+                var result = this._result;
+                this.remove();
+                return result;
+            }
         }
     };
 
@@ -7233,23 +7841,8 @@ var PolygonBool = function (_maptalks$Class) {
             return false;
         };
 
-        switch (this._task) {
-            case 'intersection':
-                this._intersectionWithTargets();
-                break;
-            case 'union':
-                this._unionWithTargets();
-                break;
-            case 'diff':
-                this._diffWithTargets();
-                break;
-            case 'xor':
-                this._xorWithTargets();
-                break;
-            default:
-                break;
-        }
-        callback(this._result, this._deals);
+        this._dealWithTargets();
+        callback(this._result);
         this.remove();
     };
 
@@ -7276,22 +7869,16 @@ var PolygonBool = function (_maptalks$Class) {
         return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon;
     };
 
-    PolygonBool.prototype._compositTargets = function _compositTargets(targets) {
-        var success = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {
-            return false;
-        };
-        var error = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : function () {
-            return false;
-        };
-
-        if (this._checkAvailGeoType(targets)) targets = [targets];
-        if (targets instanceof Array && targets.length > 0) success(targets);else error(targets);
-    };
-
-    PolygonBool.prototype._initialTaskWithGeo = function _initialTaskWithGeo(geometry, task) {
+    PolygonBool.prototype._initialTaskWithGeo = function _initialTaskWithGeo(geometry, targets, task) {
         this._insureSafeTask();
         this._task = task;
         this._savePrivateGeometry(geometry);
+        this._compositTargetsAndDeal(targets);
+    };
+
+    PolygonBool.prototype._compositTargetsAndDeal = function _compositTargetsAndDeal(targets) {
+        if (this._checkAvailGeoType(targets)) targets = [targets];
+        if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);
     };
 
     PolygonBool.prototype._insureSafeTask = function _insureSafeTask() {
@@ -7316,15 +7903,15 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._registerMapEvents = function _registerMapEvents() {
-        var _this6 = this;
+        var _this2 = this;
 
         if (!this._mousemove) {
             var _map = this._map;
             this._mousemove = function (e) {
-                return _this6._mousemoveEvents(e);
+                return _this2._mousemoveEvents(e);
             };
             this._click = function (e) {
-                return _this6._clickEvents(e);
+                return _this2._clickEvents(e);
             };
             _map.on('mousemove', this._mousemove, this);
             _map.on('click', this._click, this);
@@ -7340,13 +7927,13 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._mousemoveEvents = function _mousemoveEvents(e) {
-        var _this7 = this;
+        var _this3 = this;
 
         var geos = [];
         var coordSplit = this._getSafeCoords();
         this.layer.identify(e.coordinate).forEach(function (geo) {
-            var coord = _this7._getSafeCoords(geo);
-            if (!isEqual_1(coord, coordSplit) && _this7._checkAvailGeoType(geo)) geos.push(geo);
+            var coord = _this3._getSafeCoords(geo);
+            if (!isEqual_1(coord, coordSplit) && _this3._checkAvailGeoType(geo)) geos.push(geo);
         });
         this._updateHitGeo(geos);
     };
@@ -7400,7 +7987,10 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._copyGeoUpdateSymbol = function _copyGeoUpdateSymbol(geo, symbol) {
-        return geo.copy().updateSymbol(symbol).addTo(this._chooseLayer);
+        var coords = this._getSafeCoords(geo);
+        var result = void 0;
+        if (geo instanceof maptalks.Polygon) result = new maptalks.Polygon(coords);else result = new maptalks.MultiPolygon(coords);
+        return result.updateSymbol(symbol).addTo(this._chooseLayer);
     };
 
     PolygonBool.prototype._clickEvents = function _clickEvents(e) {
@@ -7412,41 +8002,69 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit, hasTmp) {
-        var _this8 = this;
+        var _this4 = this;
 
         var chooseNext = [];
         this._chooseGeos.forEach(function (geo) {
-            var coord = _this8._getSafeCoords(geo);
+            var coord = _this4._getSafeCoords(geo);
             if (!isEqual_1(coordHit, coord)) chooseNext.push(geo);
         });
         if (!hasTmp && chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
     };
 
     PolygonBool.prototype._updateChooseGeos = function _updateChooseGeos() {
-        var _this9 = this;
+        var _this5 = this;
 
-        var layer = this._chooseLayer;
-        layer.clear();
+        this._chooseLayer.clear();
         this._chooseGeos.forEach(function (geo) {
-            var chooseSymbol = _this9._getSymbolOrDefault(geo, 'Choose');
-            _this9._copyGeoUpdateSymbol(geo, chooseSymbol);
+            var chooseSymbol = _this5._getSymbolOrDefault(geo, 'Choose');
+            _this5._copyGeoUpdateSymbol(geo, chooseSymbol);
         });
     };
 
-    PolygonBool.prototype._intersectionWithTargets = function _intersectionWithTargets() {
+    PolygonBool.prototype._dealWithTargets = function _dealWithTargets() {
+        var _this6 = this;
+
         var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+
+        var result = void 0;
+        targets.forEach(function (target) {
+            if (result !== null) {
+                if (result) result = _this6._getBoolResultGeo(target, result);else result = _this6._getBoolResultGeo(target);
+            }
+        });
+        this._result = result;
     };
 
-    PolygonBool.prototype._unionWithTargets = function _unionWithTargets() {
-        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    PolygonBool.prototype._getBoolResultGeo = function _getBoolResultGeo(target) {
+        var geo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.geometry;
+
+        var coords = void 0;
+        try {
+            coords = boolean(this._getGeoJSONCoords(geo), this._getGeoJSONCoords(target), this._getBoolType());
+        } catch (e) {}
+        var symbol = this.geometry.getSymbol();
+        var properties = this.geometry.getProperties();
+        if (!coords) return null;
+        var result = void 0;
+        if (coords.length === 1) result = new maptalks.Polygon(coords[0], { symbol: symbol, properties: properties });else result = new maptalks.MultiPolygon(coords, { symbol: symbol, properties: properties });
+        return result;
     };
 
-    PolygonBool.prototype._diffWithTargets = function _diffWithTargets() {
-        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    PolygonBool.prototype._getGeoJSONCoords = function _getGeoJSONCoords() {
+        var geo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.geometry;
+
+        return geo.toGeoJSON().geometry.coordinates;
     };
 
-    PolygonBool.prototype._xorWithTargets = function _xorWithTargets() {
-        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
+    PolygonBool.prototype._getBoolType = function _getBoolType() {
+        var obj = {
+            intersection: 0,
+            union: 1,
+            diff: 2,
+            xor: 3
+        };
+        return obj[this._task];
     };
 
     return PolygonBool;

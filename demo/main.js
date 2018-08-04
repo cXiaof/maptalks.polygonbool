@@ -19,14 +19,23 @@ layer.on('addGeo', () =>
 )
 
 let once = false
-const drawTool = new maptalks.DrawTool({ mode: 'Point' }).addTo(map).disable()
+const defaultSymbol = {
+    polygonFill: '#ebebeb',
+    polygonOpacity: 0.2,
+    lineColor: 'black',
+    lineWidth: 1
+}
+const drawTool = new maptalks.DrawTool({ mode: 'Point' })
+    .setSymbol(defaultSymbol)
+    .addTo(map)
+    .disable()
 drawTool.on('drawend', (param) => {
     const { geometry } = param
     geometry.addTo(layer)
     if (once) drawTool.disable()
 })
 
-const modes = ['Point', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'Ellipse']
+const modes = ['Polygon', 'Rectangle', 'Circle', 'Ellipse']
 const getDrawModes = (attr) => {
     let arr = []
     modes.map((item) =>
@@ -62,42 +71,83 @@ const toolbar = new maptalks.control.Toolbar({
             click: () => {
                 layer.clear()
                 pb.cancel()
+                targets = []
             }
         }
     ]
 }).addTo(map)
 
+const renderDemoResult = (geo) => {
+    if (geo) {
+        const demoSymbol = {
+            polygonFill: 'pink',
+            lineWidth: 2
+        }
+        const id = 'demo'
+        const demoGeo = layer.getGeometryById(id)
+        if (demoGeo) demoGeo.updateSymbol(defaultSymbol).setId(undefined)
+        geo.updateSymbol(demoSymbol)
+            .addTo(layer)
+            .setId(id)
+    }
+}
+
+let targets = []
 const getOptions = (geometry) => {
     return {
         items: [
             {
                 item: 'intersection',
-                click: () => pb.intersection(geometry)
+                click: () => {
+                    const result = pb.intersection(geometry, targets)
+                    renderDemoResult(result)
+                }
             },
             '-',
             {
                 item: 'union',
-                click: () => pb.union(geometry)
+                click: () => {
+                    const result = pb.union(geometry, targets)
+                    renderDemoResult(result)
+                }
             },
             '-',
             {
                 item: 'diff',
-                click: () => pb.diff(geometry)
+                click: () => {
+                    const result = pb.diff(geometry, targets)
+                    renderDemoResult(result)
+                }
             },
             '-',
             {
                 item: 'xor',
-                click: () => pb.xor(geometry)
+                click: () => {
+                    const result = pb.xor(geometry, targets)
+                    renderDemoResult(result)
+                }
+            },
+            '-',
+            {
+                item: 'push to targets',
+                click: () => targets.push(geometry)
             },
             '-',
             {
                 item: 'submit',
-                click: () => pb.submit((result, deals) => console.log(result, deals))
+                click: () =>
+                    pb.submit((result) => {
+                        renderDemoResult(result)
+                        targets = []
+                    })
             },
             '-',
             {
                 item: 'cancel',
-                click: () => pb.cancel()
+                click: () => {
+                    pb.cancel()
+                    targets = []
+                }
             }
         ]
     }
