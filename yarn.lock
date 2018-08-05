@@ -2018,26 +2018,6 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.2.tgz#01146b36a6218e64e58f3a8d66de5d7fc6f6d051"
 
-kld-affine@^2.0.4:
-  version "2.0.4"
-  resolved "https://registry.npmjs.org/kld-affine/-/kld-affine-2.0.4.tgz#458c771ed3cbcfde64875b7c6353c71c30d9a5f9"
-
-kld-intersections@^0.4.2:
-  version "0.4.2"
-  resolved "https://registry.npmjs.org/kld-intersections/-/kld-intersections-0.4.2.tgz#96ab506a08f74e5f2d9c532ffd3bded198b8a67a"
-  dependencies:
-    kld-affine "^2.0.4"
-    kld-path-parser "0.0.2"
-    kld-polynomial "^0.1.3"
-
-kld-path-parser@0.0.2:
-  version "0.0.2"
-  resolved "https://registry.npmjs.org/kld-path-parser/-/kld-path-parser-0.0.2.tgz#d5620cc80a1337e18258efeaff7b470305470ab7"
-
-kld-polynomial@^0.1.3:
-  version "0.1.3"
-  resolved "https://registry.npmjs.org/kld-polynomial/-/kld-polynomial-0.1.3.tgz#7f0f1672331394d6790319e177dc290167772413"
-
 liftoff@^2.1.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/liftoff/-/liftoff-2.5.0.tgz#2009291bb31cea861bbf10a7c15a28caf75c31ec"

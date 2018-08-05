@@ -1,5 +1,4 @@
 import boolean from 'martinez-polygon-clipping'
-import { Point2D, Intersection } from 'kld-intersections'
 import isEqual from 'lodash/isEqual'
 
 const options = {}
