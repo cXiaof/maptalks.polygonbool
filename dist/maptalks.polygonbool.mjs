@@ -3875,47 +3875,23 @@ var PolygonBool = function (_maptalks$Class) {
     }
 
     PolygonBool.prototype.intersection = function intersection(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'intersection');
-            if (this._result) {
-                var result = this._result;
-                this.remove();
-                return result;
-            }
-        }
+        this._setTaskSafety('intersection');
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.union = function union(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'union');
-            if (this._result) {
-                var result = this._result;
-                this.remove();
-                return result;
-            }
-        }
+        this._setTaskSafety('union');
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.diff = function diff(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'diff');
-            if (this._result) {
-                var result = this._result;
-                this.remove();
-                return result;
-            }
-        }
+        this._setTaskSafety('diff');
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.xor = function xor(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'xor');
-            if (this._result) {
-                var result = this._result;
-                this.remove();
-                return result;
-            }
-        }
+        this._setTaskSafety('xor');
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.submit = function submit() {
@@ -3947,25 +3923,27 @@ var PolygonBool = function (_maptalks$Class) {
         delete this._dblclick;
     };
 
-    PolygonBool.prototype._checkAvailGeoType = function _checkAvailGeoType(geo) {
-        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon;
-    };
-
-    PolygonBool.prototype._initialTaskWithGeo = function _initialTaskWithGeo(geometry, targets, task) {
-        this._insureSafeTask();
-        this._task = task;
-        this._savePrivateGeometry(geometry);
-        this._compositTargetsAndDeal(targets);
-    };
-
-    PolygonBool.prototype._compositTargetsAndDeal = function _compositTargetsAndDeal(targets) {
-        if (this._checkAvailGeoType(targets)) targets = [targets];
-        if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);
-    };
-
-    PolygonBool.prototype._insureSafeTask = function _insureSafeTask() {
+    PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
         if (map._map_tool && drawTool instanceof maptalks.DrawTool) drawTool.disable();
         if (this.geometry) this.remove();
+        this._task = task;
+    };
+
+    PolygonBool.prototype._initialTask = function _initialTask(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._savePrivateGeometry(geometry);
+            if (this._checkAvailGeoType(targets)) targets = [targets];
+            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);
+            if (this._result) {
+                var result = this._result;
+                this.remove();
+                return result;
+            }
+        }
+    };
+
+    PolygonBool.prototype._checkAvailGeoType = function _checkAvailGeoType(geo) {
+        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon;
     };
 
     PolygonBool.prototype._savePrivateGeometry = function _savePrivateGeometry(geometry) {

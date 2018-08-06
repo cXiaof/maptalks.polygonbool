@@ -14,47 +14,23 @@ export class PolygonBool extends maptalks.Class {
     }
 
     intersection(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'intersection')
-            if (this._result) {
-                const result = this._result
-                this.remove()
-                return result
-            }
-        }
+        this._setTaskSafety('intersection')
+        return this._initialTask(geometry, targets)
     }
 
     union(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'union')
-            if (this._result) {
-                const result = this._result
-                this.remove()
-                return result
-            }
-        }
+        this._setTaskSafety('union')
+        return this._initialTask(geometry, targets)
     }
 
     diff(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'diff')
-            if (this._result) {
-                const result = this._result
-                this.remove()
-                return result
-            }
-        }
+        this._setTaskSafety('diff')
+        return this._initialTask(geometry, targets)
     }
 
     xor(geometry, targets) {
-        if (this._checkAvailGeoType(geometry)) {
-            this._initialTaskWithGeo(geometry, targets, 'xor')
-            if (this._result) {
-                const result = this._result
-                this.remove()
-                return result
-            }
-        }
+        this._setTaskSafety('xor')
+        return this._initialTask(geometry, targets)
     }
 
     submit(callback = () => false) {
@@ -82,25 +58,27 @@ export class PolygonBool extends maptalks.Class {
         delete this._dblclick
     }
 
-    _checkAvailGeoType(geo) {
-        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon
-    }
-
-    _initialTaskWithGeo(geometry, targets, task) {
-        this._insureSafeTask()
-        this._task = task
-        this._savePrivateGeometry(geometry)
-        this._compositTargetsAndDeal(targets)
-    }
-
-    _compositTargetsAndDeal(targets) {
-        if (this._checkAvailGeoType(targets)) targets = [targets]
-        if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
-    }
-
-    _insureSafeTask() {
+    _setTaskSafety(task) {
         if (map._map_tool && drawTool instanceof maptalks.DrawTool) drawTool.disable()
         if (this.geometry) this.remove()
+        this._task = task
+    }
+
+    _initialTask(geometry, targets) {
+        if (this._checkAvailGeoType(geometry)) {
+            this._savePrivateGeometry(geometry)
+            if (this._checkAvailGeoType(targets)) targets = [targets]
+            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
+            if (this._result) {
+                const result = this._result
+                this.remove()
+                return result
+            }
+        }
+    }
+
+    _checkAvailGeoType(geo) {
+        return geo instanceof maptalks.Polygon || geo instanceof maptalks.MultiPolygon
     }
 
     _savePrivateGeometry(geometry) {
