@@ -143,6 +143,21 @@ const getOptions = (geometry) => {
             },
             '-',
             {
+                item: 'example: diff all',
+                click: () => {
+                    const id = '_diffAll'
+                    geometry.setId(id)
+                    let geos = []
+                    layer.getGeometries().forEach((geo) => {
+                        if (geo.getId() !== id) geos.push(geo)
+                    })
+                    const result = pb.diff(geometry, geos)
+                    renderDemoResult(result)
+                    geometry.remove()
+                }
+            },
+            '-',
+            {
                 item: 'cancel',
                 click: () => {
                     pb.cancel()

@@ -7,7 +7,6 @@ export class PolygonBool extends maptalks.Class {
     constructor(options) {
         super(options)
         this._layerName = `${maptalks.INTERNAL_LAYER_PREFIX}_CDSP`
-        this._layerTMP = `${maptalks.INTERNAL_LAYER_PREFIX}_CDSP_TMP`
         this._chooseGeos = []
         this._colorHit = '#ffa400'
         this._colorChoose = '#00bcd4'
@@ -45,17 +44,13 @@ export class PolygonBool extends maptalks.Class {
 
     remove() {
         const map = this._map
-        if (this._tmpLayer) this._tmpLayer.remove()
         if (this._chooseLayer) this._chooseLayer.remove()
         this._chooseGeos = []
         this._offMapEvents()
         delete this._result
-        delete this._deals
-        delete this._tmpLayer
         delete this._chooseLayer
         delete this._mousemove
         delete this._click
-        delete this._dblclick
     }
 
     _setTaskSafety(task) {
@@ -91,7 +86,6 @@ export class PolygonBool extends maptalks.Class {
     _addTo(map) {
         if (this._chooseLayer) this.remove()
         this._map = map
-        this._tmpLayer = new maptalks.VectorLayer(this._layerTMP).addTo(map).bringToFront()
         this._chooseLayer = new maptalks.VectorLayer(this._layerName).addTo(map).bringToFront()
         this._registerMapEvents()
         return this

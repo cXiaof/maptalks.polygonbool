@@ -38,6 +38,11 @@ new maptalks.PolygonBool()
 -   options
     -   none
 
+`intersection(geometry, targets)`
+`union(geometry, targets)`
+`diff(geometry, targets)`
+`xor(geometry, targets)`
+
 `submit(callback)` callback can get two attr, the result and deals which be remove in task
 `cancel()`
 `remove()`
@@ -95,3 +100,4 @@ $ npm run lint
 -   [maptalks.autoadsorb](https://github.com/cXiaof/maptalks.autoadsorb/issues)
 -   [maptalks.multisuite](https://github.com/cXiaof/maptalks.multisuite/issues)
 -   [maptalks.geosplit](https://github.com/cXiaof/maptalks.geosplit/issues)
+-   [maptalks.polygonbool](https://github.com/cXiaof/maptalks.polygonbool/issues)

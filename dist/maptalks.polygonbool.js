@@ -3873,7 +3873,6 @@ var PolygonBool = function (_maptalks$Class) {
         var _this = _possibleConstructorReturn(this, _maptalks$Class.call(this, options));
 
         _this._layerName = maptalks.INTERNAL_LAYER_PREFIX + '_CDSP';
-        _this._layerTMP = maptalks.INTERNAL_LAYER_PREFIX + '_CDSP_TMP';
         _this._chooseGeos = [];
         _this._colorHit = '#ffa400';
         _this._colorChoose = '#00bcd4';
@@ -3916,17 +3915,13 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype.remove = function remove() {
         var map = this._map;
-        if (this._tmpLayer) this._tmpLayer.remove();
         if (this._chooseLayer) this._chooseLayer.remove();
         this._chooseGeos = [];
         this._offMapEvents();
         delete this._result;
-        delete this._deals;
-        delete this._tmpLayer;
         delete this._chooseLayer;
         delete this._mousemove;
         delete this._click;
-        delete this._dblclick;
     };
 
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
@@ -3962,7 +3957,6 @@ var PolygonBool = function (_maptalks$Class) {
     PolygonBool.prototype._addTo = function _addTo(map) {
         if (this._chooseLayer) this.remove();
         this._map = map;
-        this._tmpLayer = new maptalks.VectorLayer(this._layerTMP).addTo(map).bringToFront();
         this._chooseLayer = new maptalks.VectorLayer(this._layerName).addTo(map).bringToFront();
         this._registerMapEvents();
         return this;
