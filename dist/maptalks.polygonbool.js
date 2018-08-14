@@ -1,5 +1,5 @@
 /*!
- * maptalks.polygonbool v0.1.0-alpha.1
+ * maptalks.polygonbool v0.1.0-alpha.2
  * LICENSE : MIT
  * (c) 2016-2018 maptalks.org
  */
@@ -3934,7 +3934,7 @@ var PolygonBool = function (_maptalks$Class) {
         if (this._checkAvailGeoType(geometry)) {
             this._savePrivateGeometry(geometry);
             if (this._checkAvailGeoType(targets)) targets = [targets];
-            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);
+            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);else return geometry.copy();
             if (this._result) {
                 var result = this._result;
                 this.remove();
@@ -4136,6 +4136,6 @@ exports.PolygonBool = PolygonBool;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.1');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.2');
 
 })));

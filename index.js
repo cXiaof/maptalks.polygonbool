@@ -64,6 +64,7 @@ export class PolygonBool extends maptalks.Class {
             this._savePrivateGeometry(geometry)
             if (this._checkAvailGeoType(targets)) targets = [targets]
             if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
+            else return geometry.copy()
             if (this._result) {
                 const result = this._result
                 this.remove()
