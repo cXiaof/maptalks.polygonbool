@@ -205,14 +205,15 @@ export class PolygonBool extends maptalks.Class {
 
     _dealWithTargets(targets = this._chooseGeos) {
         let result
+        this._deals = []
         targets.forEach((target) => {
             if (result !== null) {
                 if (result) result = this._getBoolResultGeo(target, result)
                 else result = this._getBoolResultGeo(target)
             }
+            this._deals.push(target.copy())
         })
         this._result = result
-        this._deals = targets
     }
 
     _getBoolResultGeo(target, geo = this.geometry) {

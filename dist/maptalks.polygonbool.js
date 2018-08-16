@@ -4091,13 +4091,14 @@ var PolygonBool = function (_maptalks$Class) {
         var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
 
         var result = void 0;
+        this._deals = [];
         targets.forEach(function (target) {
             if (result !== null) {
                 if (result) result = _this6._getBoolResultGeo(target, result);else result = _this6._getBoolResultGeo(target);
             }
+            _this6._deals.push(target.copy());
         });
         this._result = result;
-        this._deals = targets;
     };
 
     PolygonBool.prototype._getBoolResultGeo = function _getBoolResultGeo(target) {
