@@ -1,7 +1,9 @@
 import boolean from 'martinez-polygon-clipping'
 import isEqual from 'lodash/isEqual'
 
-const options = {}
+const options = {
+    includeSame: true
+}
 
 export class PolygonBool extends maptalks.Class {
     constructor(options) {
@@ -34,7 +36,7 @@ export class PolygonBool extends maptalks.Class {
 
     submit(callback = () => false) {
         this._dealWithTargets()
-        callback(this._result)
+        callback(this._result, this._deals)
         this.remove()
     }
 
@@ -48,6 +50,7 @@ export class PolygonBool extends maptalks.Class {
         this._chooseGeos = []
         this._offMapEvents()
         delete this._result
+        delete this._deals
         delete this._chooseLayer
         delete this._mousemove
         delete this._click
@@ -209,16 +212,16 @@ export class PolygonBool extends maptalks.Class {
             }
         })
         this._result = result
+        this._deals = targets
     }
 
     _getBoolResultGeo(target, geo = this.geometry) {
+        const coordsGeo = this._getGeoJSONCoords(geo)
+        const coordsTarget = this._getGeoJSONCoords(target)
+        if (!this.options['includeSame'] && isEqual(coordsGeo, coordsTarget)) return geo
         let coords
         try {
-            coords = boolean(
-                this._getGeoJSONCoords(geo),
-                this._getGeoJSONCoords(target),
-                this._getBoolType()
-            )
+            coords = boolean(coordsGeo, coordsTarget, this._getBoolType())
         } catch (e) {}
         const symbol = this.geometry.getSymbol()
         const properties = this.geometry.getProperties()

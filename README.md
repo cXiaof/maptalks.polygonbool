@@ -33,10 +33,11 @@ As a plugin, `maptalks.polygonbool` must be loaded after `maptalks.js` in browse
 
 ```javascript
 new maptalks.PolygonBool()
+// new maptalks.PolygonBool({ includeSame: false })
 ```
 
 -   options
-    -   none
+    -   includeSame **boolean** decide if exclude geometry with same coordinates, default is true
 
 `intersection(geometry, targets)`
 `union(geometry, targets)`

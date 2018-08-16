@@ -136,8 +136,9 @@ const getOptions = (geometry) => {
             {
                 item: 'submit',
                 click: () =>
-                    pb.submit((result) => {
+                    pb.submit((result, deals) => {
                         renderDemoResult(result)
+                        console.log(result, deals)
                         targets = []
                     })
             },

@@ -1,5 +1,5 @@
 /*!
- * maptalks.polygonbool v0.1.0-alpha.2
+ * maptalks.polygonbool v0.1.0-alpha.3
  * LICENSE : MIT
  * (c) 2016-2018 maptalks.org
  */
@@ -3856,7 +3856,9 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
-var options = {};
+var options = {
+    includeSame: true
+};
 
 var PolygonBool = function (_maptalks$Class) {
     _inherits(PolygonBool, _maptalks$Class);
@@ -3899,7 +3901,7 @@ var PolygonBool = function (_maptalks$Class) {
         };
 
         this._dealWithTargets();
-        callback(this._result);
+        callback(this._result, this._deals);
         this.remove();
     };
 
@@ -3913,6 +3915,7 @@ var PolygonBool = function (_maptalks$Class) {
         this._chooseGeos = [];
         this._offMapEvents();
         delete this._result;
+        delete this._deals;
         delete this._chooseLayer;
         delete this._mousemove;
         delete this._click;
@@ -4088,14 +4091,18 @@ var PolygonBool = function (_maptalks$Class) {
             }
         });
         this._result = result;
+        this._deals = targets;
     };
 
     PolygonBool.prototype._getBoolResultGeo = function _getBoolResultGeo(target) {
         var geo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.geometry;
 
+        var coordsGeo = this._getGeoJSONCoords(geo);
+        var coordsTarget = this._getGeoJSONCoords(target);
+        if (!this.options['includeSame'] && isEqual_1(coordsGeo, coordsTarget)) return geo;
         var coords = void 0;
         try {
-            coords = boolean(this._getGeoJSONCoords(geo), this._getGeoJSONCoords(target), this._getBoolType());
+            coords = boolean(coordsGeo, coordsTarget, this._getBoolType());
         } catch (e) {}
         var symbol = this.geometry.getSymbol();
         var properties = this.geometry.getProperties();
@@ -4128,4 +4135,4 @@ PolygonBool.mergeOptions(options);
 
 export { PolygonBool };
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.2');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.3');

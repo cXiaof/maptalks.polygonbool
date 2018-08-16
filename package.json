@@ -1,6 +1,6 @@
 {
   "name": "maptalks.polygonbool",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "A tool to do boolean operation of Polygon and MultiPolygon.",
   "license": "MIT",
   "author": "cXiaof",
