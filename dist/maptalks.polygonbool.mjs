@@ -3877,22 +3877,38 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype.intersection = function intersection(geometry, targets) {
         this._setTaskSafety('intersection');
-        return this._initialTask(geometry, targets);
+        var result = this._initialTask(geometry, targets);
+        if (result) {
+            this.remove();
+            return result;
+        }
     };
 
     PolygonBool.prototype.union = function union(geometry, targets) {
         this._setTaskSafety('union');
-        return this._initialTask(geometry, targets);
+        var result = this._initialTask(geometry, targets);
+        if (result) {
+            this.remove();
+            return result;
+        }
     };
 
     PolygonBool.prototype.diff = function diff(geometry, targets) {
         this._setTaskSafety('diff');
-        return this._initialTask(geometry, targets);
+        var result = this._initialTask(geometry, targets);
+        if (result) {
+            this.remove();
+            return result;
+        }
     };
 
     PolygonBool.prototype.xor = function xor(geometry, targets) {
         this._setTaskSafety('xor');
-        return this._initialTask(geometry, targets);
+        var result = this._initialTask(geometry, targets);
+        if (result) {
+            this.remove();
+            return result;
+        }
     };
 
     PolygonBool.prototype.submit = function submit() {

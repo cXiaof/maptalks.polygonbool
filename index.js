@@ -16,22 +16,38 @@ export class PolygonBool extends maptalks.Class {
 
     intersection(geometry, targets) {
         this._setTaskSafety('intersection')
-        return this._initialTask(geometry, targets)
+        const result = this._initialTask(geometry, targets)
+        if (result) {
+            this.remove()
+            return result
+        }
     }
 
     union(geometry, targets) {
         this._setTaskSafety('union')
-        return this._initialTask(geometry, targets)
+        const result = this._initialTask(geometry, targets)
+        if (result) {
+            this.remove()
+            return result
+        }
     }
 
     diff(geometry, targets) {
         this._setTaskSafety('diff')
-        return this._initialTask(geometry, targets)
+        const result = this._initialTask(geometry, targets)
+        if (result) {
+            this.remove()
+            return result
+        }
     }
 
     xor(geometry, targets) {
         this._setTaskSafety('xor')
-        return this._initialTask(geometry, targets)
+        const result = this._initialTask(geometry, targets)
+        if (result) {
+            this.remove()
+            return result
+        }
     }
 
     submit(callback = () => false) {
