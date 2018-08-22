@@ -33,11 +33,12 @@ As a plugin, `maptalks.polygonbool` must be loaded after `maptalks.js` in browse
 
 ```javascript
 new maptalks.PolygonBool()
-// new maptalks.PolygonBool({ includeSame: false })
+// new maptalks.PolygonBool({ includeSame: false, alterNative: ['foo_layer_id', 'bar_layer_id'] })
 ```
 
 -   options
     -   includeSame **boolean** decide if exclude geometry with same coordinates, default is true
+    -   alterNative **Array** layer names of layer which you need to choose geometry on
 
 `intersection(geometry, targets)`
 `union(geometry, targets)`
