@@ -93,13 +93,15 @@ const renderDemoResult = (geo) => {
 }
 
 let targets = []
+let result = {}
 const getOptions = (geometry) => {
     return {
         items: [
             {
                 item: 'intersection',
                 click: () => {
-                    const result = pb.intersection(geometry, targets)
+                    if (targets.length > 0) result = pb.intersection(geometry, targets)
+                    else result = pb.intersection(geometry)
                     renderDemoResult(result)
                 }
             },
@@ -107,7 +109,8 @@ const getOptions = (geometry) => {
             {
                 item: 'union',
                 click: () => {
-                    const result = pb.union(geometry, targets)
+                    if (targets.length > 0) result = pb.union(geometry, targets)
+                    else result = pb.union(geometry)
                     renderDemoResult(result)
                 }
             },
@@ -115,7 +118,8 @@ const getOptions = (geometry) => {
             {
                 item: 'diff',
                 click: () => {
-                    const result = pb.diff(geometry, targets)
+                    if (targets.length > 0) result = pb.diff(geometry, targets)
+                    else result = pb.diff(geometry)
                     renderDemoResult(result)
                 }
             },
@@ -123,7 +127,8 @@ const getOptions = (geometry) => {
             {
                 item: 'xor',
                 click: () => {
-                    const result = pb.xor(geometry, targets)
+                    if (targets.length > 0) result = pb.xor(geometry, targets)
+                    else result = pb.xor(geometry)
                     renderDemoResult(result)
                 }
             },

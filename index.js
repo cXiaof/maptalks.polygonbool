@@ -2,7 +2,8 @@ import boolean from 'martinez-polygon-clipping'
 import isEqual from 'lodash/isEqual'
 
 const options = {
-    includeSame: true
+    includeSame: true,
+    alterNative: []
 }
 
 export class PolygonBool extends maptalks.Class {
@@ -16,38 +17,22 @@ export class PolygonBool extends maptalks.Class {
 
     intersection(geometry, targets) {
         this._setTaskSafety('intersection')
-        const result = this._initialTask(geometry, targets)
-        if (result) {
-            this.remove()
-            return result
-        }
+        return this._initialTask(geometry, targets)
     }
 
     union(geometry, targets) {
         this._setTaskSafety('union')
-        const result = this._initialTask(geometry, targets)
-        if (result) {
-            this.remove()
-            return result
-        }
+        return this._initialTask(geometry, targets)
     }
 
     diff(geometry, targets) {
         this._setTaskSafety('diff')
-        const result = this._initialTask(geometry, targets)
-        if (result) {
-            this.remove()
-            return result
-        }
+        return this._initialTask(geometry, targets)
     }
 
     xor(geometry, targets) {
         this._setTaskSafety('xor')
-        const result = this._initialTask(geometry, targets)
-        if (result) {
-            this.remove()
-            return result
-        }
+        return this._initialTask(geometry, targets)
     }
 
     submit(callback = () => false) {
@@ -80,14 +65,20 @@ export class PolygonBool extends maptalks.Class {
 
     _initialTask(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._savePrivateGeometry(geometry)
-            if (this._checkAvailGeoType(targets)) targets = [targets]
-            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
-            else return geometry.copy()
-            if (this._result) {
-                const result = this._result
-                this.remove()
-                return result
+            if (targets === undefined) {
+                this._savePrivateGeometry(geometry)
+                this._chooseGeos = [geometry]
+                this._updateChooseGeos()
+            } else {
+                this.geometry = geometry
+                if (this._checkAvailGeoType(targets)) targets = [targets]
+                if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets)
+                else this._result = geometry.copy()
+                if (this._result) {
+                    const result = this._result
+                    this.remove()
+                    return result
+                }
             }
         }
     }
@@ -132,10 +123,18 @@ export class PolygonBool extends maptalks.Class {
     _mousemoveEvents(e) {
         let geos = []
         const coordSplit = this._getSafeCoords()
-        this.layer.identify(e.coordinate).forEach((geo) => {
-            const coord = this._getSafeCoords(geo)
-            if (!isEqual(coord, coordSplit) && this._checkAvailGeoType(geo)) geos.push(geo)
-        })
+        e.target.identify(
+            {
+                coordinate: e.coordinate,
+                tolerance: 0.0001,
+                layers: [this.layer.getId(), ...this.options['alterNative']]
+            },
+            (hits) =>
+                hits.forEach((geo) => {
+                    const coord = this._getSafeCoords(geo)
+                    if (!isEqual(coord, coordSplit) && this._checkAvailGeoType(geo)) geos.push(geo)
+                })
+        )
         this._updateHitGeo(geos)
     }
 

@@ -1,5 +1,5 @@
 /*!
- * maptalks.polygonbool v0.1.0-alpha.3
+ * maptalks.polygonbool v0.1.0-alpha.4
  * LICENSE : MIT
  * (c) 2016-2018 maptalks.org
  */
@@ -3857,7 +3857,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
 var options = {
-    includeSame: true
+    includeSame: true,
+    alterNative: []
 };
 
 var PolygonBool = function (_maptalks$Class) {
@@ -3877,38 +3878,22 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype.intersection = function intersection(geometry, targets) {
         this._setTaskSafety('intersection');
-        var result = this._initialTask(geometry, targets);
-        if (result) {
-            this.remove();
-            return result;
-        }
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.union = function union(geometry, targets) {
         this._setTaskSafety('union');
-        var result = this._initialTask(geometry, targets);
-        if (result) {
-            this.remove();
-            return result;
-        }
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.diff = function diff(geometry, targets) {
         this._setTaskSafety('diff');
-        var result = this._initialTask(geometry, targets);
-        if (result) {
-            this.remove();
-            return result;
-        }
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.xor = function xor(geometry, targets) {
         this._setTaskSafety('xor');
-        var result = this._initialTask(geometry, targets);
-        if (result) {
-            this.remove();
-            return result;
-        }
+        return this._initialTask(geometry, targets);
     };
 
     PolygonBool.prototype.submit = function submit() {
@@ -3945,13 +3930,19 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype._initialTask = function _initialTask(geometry, targets) {
         if (this._checkAvailGeoType(geometry)) {
-            this._savePrivateGeometry(geometry);
-            if (this._checkAvailGeoType(targets)) targets = [targets];
-            if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);else return geometry.copy();
-            if (this._result) {
-                var result = this._result;
-                this.remove();
-                return result;
+            if (targets === undefined) {
+                this._savePrivateGeometry(geometry);
+                this._chooseGeos = [geometry];
+                this._updateChooseGeos();
+            } else {
+                this.geometry = geometry;
+                if (this._checkAvailGeoType(targets)) targets = [targets];
+                if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);else this._result = geometry.copy();
+                if (this._result) {
+                    var result = this._result;
+                    this.remove();
+                    return result;
+                }
             }
         }
     };
@@ -4004,9 +3995,15 @@ var PolygonBool = function (_maptalks$Class) {
 
         var geos = [];
         var coordSplit = this._getSafeCoords();
-        this.layer.identify(e.coordinate).forEach(function (geo) {
-            var coord = _this3._getSafeCoords(geo);
-            if (!isEqual_1(coord, coordSplit) && _this3._checkAvailGeoType(geo)) geos.push(geo);
+        e.target.identify({
+            coordinate: e.coordinate,
+            tolerance: 0.0001,
+            layers: [this.layer.getId()].concat(this.options['alterNative'])
+        }, function (hits) {
+            return hits.forEach(function (geo) {
+                var coord = _this3._getSafeCoords(geo);
+                if (!isEqual_1(coord, coordSplit) && _this3._checkAvailGeoType(geo)) geos.push(geo);
+            });
         });
         this._updateHitGeo(geos);
     };
@@ -4152,4 +4149,4 @@ PolygonBool.mergeOptions(options);
 
 export { PolygonBool };
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.3');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-alpha.4');
