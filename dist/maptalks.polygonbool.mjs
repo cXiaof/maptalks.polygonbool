@@ -3923,7 +3923,6 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
-        if (map._map_tool && drawTool instanceof maptalks.DrawTool) drawTool.disable();
         if (this.geometry) this.remove();
         this._task = task;
     };
@@ -3960,6 +3959,7 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype._addTo = function _addTo(map) {
         if (this._chooseLayer) this.remove();
+        if (map._map_tool && map._map_tool instanceof maptalks.DrawTool) map._map_tool.disable();
         this._map = map;
         this._chooseLayer = new maptalks.VectorLayer(this._layerName).addTo(map).bringToFront();
         this._registerMapEvents();
@@ -3970,23 +3970,23 @@ var PolygonBool = function (_maptalks$Class) {
         var _this2 = this;
 
         if (!this._mousemove) {
-            var _map = this._map;
+            var map = this._map;
             this._mousemove = function (e) {
                 return _this2._mousemoveEvents(e);
             };
             this._click = function (e) {
                 return _this2._clickEvents(e);
             };
-            _map.on('mousemove', this._mousemove, this);
-            _map.on('click', this._click, this);
+            map.on('mousemove', this._mousemove, this);
+            map.on('click', this._click, this);
         }
     };
 
     PolygonBool.prototype._offMapEvents = function _offMapEvents() {
         if (this._mousemove) {
-            var _map2 = this._map;
-            _map2.off('mousemove', this._mousemove, this);
-            _map2.off('click', this._click, this);
+            var map = this._map;
+            map.off('mousemove', this._mousemove, this);
+            map.off('click', this._click, this);
         }
     };
 

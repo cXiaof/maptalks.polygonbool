@@ -58,7 +58,6 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _setTaskSafety(task) {
-        if (map._map_tool && drawTool instanceof maptalks.DrawTool) drawTool.disable()
         if (this.geometry) this.remove()
         this._task = task
     }
@@ -96,6 +95,7 @@ export class PolygonBool extends maptalks.Class {
 
     _addTo(map) {
         if (this._chooseLayer) this.remove()
+        if (map._map_tool && map._map_tool instanceof maptalks.DrawTool) map._map_tool.disable()
         this._map = map
         this._chooseLayer = new maptalks.VectorLayer(this._layerName).addTo(map).bringToFront()
         this._registerMapEvents()
