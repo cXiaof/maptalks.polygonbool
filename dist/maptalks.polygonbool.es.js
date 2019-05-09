@@ -3907,10 +3907,12 @@ var PolygonBool = function (_maptalks$Class) {
         this._dealWithTargets();
         callback(this._result, this._deals);
         this.remove();
+        return this;
     };
 
     PolygonBool.prototype.cancel = function cancel() {
         this.remove();
+        return this;
     };
 
     PolygonBool.prototype.remove = function remove() {
@@ -3923,6 +3925,7 @@ var PolygonBool = function (_maptalks$Class) {
         delete this._chooseLayer;
         delete this._mousemove;
         delete this._click;
+        return this;
     };
 
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
@@ -3955,9 +3958,8 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype._savePrivateGeometry = function _savePrivateGeometry(geometry) {
         this.geometry = geometry;
-        this.layer = geometry._layer;
-        if (geometry.type.startsWith('Multi')) this.layer = geometry._geometries[0]._layer;
-        this._addTo(this.layer.map);
+        this.layer = geometry.getLayer();
+        this._addTo(geometry.getMap());
     };
 
     PolygonBool.prototype._addTo = function _addTo(map) {
@@ -3966,7 +3968,6 @@ var PolygonBool = function (_maptalks$Class) {
         this._map = map;
         this._chooseLayer = new maptalks.VectorLayer(this._layerName).addTo(map).bringToFront();
         this._registerMapEvents();
-        return this;
     };
 
     PolygonBool.prototype._registerMapEvents = function _registerMapEvents() {
@@ -4077,11 +4078,11 @@ var PolygonBool = function (_maptalks$Class) {
     PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit, hasTmp) {
         var _this4 = this;
 
-        var chooseNext = [];
-        this._chooseGeos.forEach(function (geo) {
+        var chooseNext = this._chooseGeos.reduce(function (target, geo) {
             var coord = _this4._getSafeCoords(geo);
-            if (!isEqual_1(coordHit, coord)) chooseNext.push(geo);
-        });
+            if (!isEqual_1(coordHit, coord)) target.push(geo);
+            return target;
+        }, []);
         if (!hasTmp && chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
     };
 
@@ -4101,32 +4102,34 @@ var PolygonBool = function (_maptalks$Class) {
         var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
 
         var result = void 0;
-        this._deals = [];
-        targets.forEach(function (target) {
+        this._deals = targets.map(function (target) {
             if (result !== null) {
                 if (result) result = _this6._getBoolResultGeo(target, result);else result = _this6._getBoolResultGeo(target);
             }
-            _this6._deals.push(target.copy());
+            return target.copy();
         });
+        result = this._checkUnexpectedVertux(result);
         this._result = result;
     };
 
     PolygonBool.prototype._getBoolResultGeo = function _getBoolResultGeo(target) {
         var geo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.geometry;
 
-        var coordsGeo = this._getGeoJSONCoords(geo);
+        var tasks = ['intersection', 'union', 'diff', 'xor'];
+        var boolType = tasks.indexOf(this._task);
         var coordsTarget = this._getGeoJSONCoords(target);
+        var coordsGeo = this._getGeoJSONCoords(geo);
         if (!this.options['includeSame'] && isEqual_1(coordsGeo, coordsTarget)) return geo;
         var coords = void 0;
         try {
-            coords = boolean(coordsGeo, coordsTarget, this._getBoolType());
+            coords = boolean(coordsGeo, coordsTarget, boolType);
         } catch (e) {}
-        var symbol = this.geometry.getSymbol();
-        var properties = this.geometry.getProperties();
         if (!coords) return null;
-        var result = void 0;
-        if (coords.length === 1) result = new maptalks.Polygon(coords[0], { symbol: symbol, properties: properties });else result = new maptalks.MultiPolygon(coords, { symbol: symbol, properties: properties });
-        return result;
+        var options = {
+            symbol: this.geometry.getSymbol(),
+            properties: this.geometry.getProperties()
+        };
+        return coords.length === 1 ? new maptalks.Polygon(coords[0], options) : new maptalks.MultiPolygon(coords, options);
     };
 
     PolygonBool.prototype._getGeoJSONCoords = function _getGeoJSONCoords() {
@@ -4135,14 +4138,31 @@ var PolygonBool = function (_maptalks$Class) {
         return geo.toGeoJSON().geometry.coordinates;
     };
 
-    PolygonBool.prototype._getBoolType = function _getBoolType() {
-        var obj = {
-            intersection: 0,
-            union: 1,
-            diff: 2,
-            xor: 3
-        };
-        return obj[this._task];
+    PolygonBool.prototype._checkUnexpectedVertux = function _checkUnexpectedVertux(geo) {
+        var _this7 = this;
+
+        if (!geo) return geo;
+        if (geo instanceof maptalks.Polygon) this._removeUnexpectedVertux(geo);else geo.forEach(function (polygon) {
+            return _this7._removeUnexpectedVertux(polygon);
+        });
+        return geo;
+    };
+
+    PolygonBool.prototype._removeUnexpectedVertux = function _removeUnexpectedVertux(geo) {
+        var coordinates = this._getGeoJSONCoords(geo);
+        var needReset = false;
+        var saveCoords = coordinates.map(function (coords) {
+            var saveCoordsItem = [];
+            for (var i = 0; i < coords.length; i++) {
+                var coord = coords[i];
+                saveCoordsItem.push(coord);
+                var hasUnexpectedVertux = isEqual_1(coord, coords[i + 2]);
+                needReset = needReset || hasUnexpectedVertux;
+                if (i < coords.length - 2 && hasUnexpectedVertux) i += 2;
+            }
+            return saveCoordsItem;
+        });
+        if (needReset) geo.setCoordinates(saveCoordsItem);
     };
 
     return PolygonBool;
