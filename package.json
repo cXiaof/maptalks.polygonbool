@@ -1,6 +1,6 @@
 {
   "name": "maptalks.polygonbool",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-beta.1",
   "description": "A tool to do boolean operation of Polygon and MultiPolygon.",
   "license": "MIT",
   "author": "cXiaof",
@@ -9,7 +9,12 @@
     "url": "https://github.com/cXiaof/maptalks.polygonbool.git"
   },
   "main": "dist/maptalks.polygonbool.min.js",
-  "keywords": ["maptalks", "polygonbool", "boolean", "bool"],
+  "keywords": [
+    "maptalks",
+    "polygonbool",
+    "boolean",
+    "bool"
+  ],
   "bugs": {
     "url": "https://github.com/cXiaof/maptalks.polygonbool/issues"
   },
@@ -18,20 +23,17 @@
     "prepublish": "gulp minify",
     "b": "gulp minify",
     "watch": "gulp watch",
-    "w": "gulp watch",
-    "i": "jsinspect ./index.js",
-    "it": "jsinspect -t 20 ./index.js"
-  },
-  "devDependencies": {
-    "babel-eslint": "^8.2.6",
-    "babel-preset-env": "^1.7.0",
-    "gulp": "^3.9.1",
-    "jsinspect": "^0.12.7",
-    "maptalks": "^0.40.5",
-    "maptalks-build-helpers": "^0.5.0"
+    "w": "gulp watch"
   },
   "dependencies": {
-    "lodash": "^4.17.10",
-    "martinez-polygon-clipping": "^0.4.3"
+    "lodash.isequal": "^4.5.0",
+    "martinez-polygon-clipping": "^0.5.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "babel-preset-env": "^1.7.0",
+    "gulp": "^4.0.1",
+    "maptalks": "^0.44.0",
+    "maptalks-build-helpers": "^0.4.5"
   }
 }
