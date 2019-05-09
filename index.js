@@ -1,5 +1,5 @@
 import boolean from 'martinez-polygon-clipping'
-import isEqual from 'lodash/isEqual'
+import isEqual from 'lodash.isequal'
 
 const options = {
     includeSame: true,
@@ -214,11 +214,11 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _setChooseGeosExceptHit(coordHit, hasTmp) {
-        const chooseNext = this._chooseGeos.reduce((target, geo) => {
+        let chooseNext = []
+        this._chooseGeos.forEach((geo) => {
             const coord = this._getSafeCoords(geo)
-            if (!isEqual(coordHit, coord)) target.push(geo)
-            return target
-        }, [])
+            if (!isEqual(coordHit, coord)) chooseNext.push(geo)
+        })
         if (!hasTmp && chooseNext.length === this._chooseGeos.length)
             this._chooseGeos.push(this.hitGeo)
         else this._chooseGeos = chooseNext
@@ -234,64 +234,48 @@ export class PolygonBool extends maptalks.Class {
 
     _dealWithTargets(targets = this._chooseGeos) {
         let result
-        this._deals = targets.map((target) => {
+        this._deals = []
+        targets.forEach((target) => {
             if (result !== null) {
                 if (result) result = this._getBoolResultGeo(target, result)
                 else result = this._getBoolResultGeo(target)
             }
-            return target.copy()
+            this._deals.push(target.copy())
         })
-        result = this._checkUnexpectedVertux(result)
         this._result = result
     }
 
     _getBoolResultGeo(target, geo = this.geometry) {
-        const tasks = ['intersection', 'union', 'diff', 'xor']
-        const boolType = tasks.indexOf(this._task)
-        const coordsTarget = this._getGeoJSONCoords(target)
         const coordsGeo = this._getGeoJSONCoords(geo)
+        const coordsTarget = this._getGeoJSONCoords(target)
         if (!this.options['includeSame'] && isEqual(coordsGeo, coordsTarget))
             return geo
         let coords
         try {
-            coords = boolean(coordsGeo, coordsTarget, boolType)
+            coords = boolean(coordsGeo, coordsTarget, this._getBoolType())
         } catch (e) {}
+        const symbol = this.geometry.getSymbol()
+        const properties = this.geometry.getProperties()
         if (!coords) return null
-        const options = {
-            symbol: this.geometry.getSymbol(),
-            properties: this.geometry.getProperties()
-        }
-        return coords.length === 1
-            ? new maptalks.Polygon(coords[0], options)
-            : new maptalks.MultiPolygon(coords, options)
+        let result
+        if (coords.length === 1)
+            result = new maptalks.Polygon(coords[0], { symbol, properties })
+        else result = new maptalks.MultiPolygon(coords, { symbol, properties })
+        return result
     }
 
     _getGeoJSONCoords(geo = this.geometry) {
         return geo.toGeoJSON().geometry.coordinates
     }
 
-    _checkUnexpectedVertux(geo) {
-        if (!geo) return geo
-        if (geo instanceof maptalks.Polygon) this._removeUnexpectedVertux(geo)
-        else geo.forEach((polygon) => this._removeUnexpectedVertux(polygon))
-        return geo
-    }
-
-    _removeUnexpectedVertux(geo) {
-        const coordinates = this._getGeoJSONCoords(geo)
-        let needReset = false
-        const saveCoords = coordinates.map((coords) => {
-            let saveCoordsItem = []
-            for (let i = 0; i < coords.length; i++) {
-                const coord = coords[i]
-                saveCoordsItem.push(coord)
-                const hasUnexpectedVertux = isEqual(coord, coords[i + 2])
-                needReset = needReset || hasUnexpectedVertux
-                if (i < coords.length - 2 && hasUnexpectedVertux) i += 2
-            }
-            return saveCoordsItem
-        })
-        if (needReset) geo.setCoordinates(saveCoordsItem)
+    _getBoolType() {
+        const obj = {
+            intersection: 0,
+            union: 1,
+            diff: 2,
+            xor: 3
+        }
+        return obj[this._task]
     }
 }
 
