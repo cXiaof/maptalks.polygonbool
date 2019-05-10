@@ -9,7 +9,7 @@ const options = {
 export class PolygonBool extends maptalks.Class {
     constructor(options) {
         super(options)
-        this._layerName = `${maptalks.INTERNAL_LAYER_PREFIX}_CDSP`
+        this._layerName = `${maptalks.INTERNAL_LAYER_PREFIX}_POLYGONBOOL`
         this._chooseGeos = []
         this._colorHit = '#ffa400'
         this._colorChoose = '#00bcd4'

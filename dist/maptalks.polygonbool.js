@@ -3525,7 +3525,7 @@ var PolygonBool = function (_maptalks$Class) {
 
         var _this = _possibleConstructorReturn(this, _maptalks$Class.call(this, options));
 
-        _this._layerName = maptalks.INTERNAL_LAYER_PREFIX + '_CDSP';
+        _this._layerName = maptalks.INTERNAL_LAYER_PREFIX + '_POLYGONBOOL';
         _this._chooseGeos = [];
         _this._colorHit = '#ffa400';
         _this._colorChoose = '#00bcd4';

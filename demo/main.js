@@ -127,3 +127,26 @@ const getOptions = (geometry) => {
         ]
     }
 }
+
+// new tip Panel
+const textPanel = new maptalks.control.Panel({
+    position: 'bottom-left',
+    draggable: true,
+    custom: false,
+    content: `
+        Click a type in <b>Draw</b> or <b>Draw Once</b> to draw geometry, and click<br />
+        <b>Stop</b> to stop drawing.<br />
+        Contextmenu on a geometry open the menu, choose a task and<br />
+        start to choose geometry or geometries as targets, click it when<br />
+        it's color be changed.<br />
+        Finaly, Contextmenu on the geometry again, click <b>submit</b> and see<br />
+        the effect.<br />
+        <br />
+        点击<b>Draw</b>或<b>Draw Once</b>里的类型开始画相应的图形， 点击<b>Stop</b>停止。<br />
+        右键你要操作的图形，选择一种模式（交集/并集/排除/异或），然后开<br />
+        始选择一个或多个目标图形，被命中时图形会变色。<br />
+        最后再次右键你要分隔的图形，点击<b>submit</b>查看效果。
+    `,
+    closeButton: true
+})
+map.addControl(textPanel)
