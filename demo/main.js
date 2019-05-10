@@ -97,14 +97,12 @@ const toolbar = new maptalks.control.Toolbar({
 
 // Menu options
 const renderDemoResult = (geo) => {
+    const id = 'demo'
+    const demoGeo = layer.getGeometryById(id)
+    if (demoGeo) demoGeo.updateSymbol(defaultSymbol).setId(undefined)
     if (geo) {
-        const demoSymbol = { polygonFill: 'pink', lineWidth: 2 }
-        const id = 'demo'
-        const demoGeo = layer.getGeometryById(id)
-        if (demoGeo) demoGeo.updateSymbol(defaultSymbol).setId(undefined)
-        geo.updateSymbol(demoSymbol)
-            .addTo(layer)
-            .setId(id)
+        geo.addTo(layer).setId(id)
+        geo.updateSymbol({ polygonFill: 'pink', lineWidth: 2 })
     }
 }
 

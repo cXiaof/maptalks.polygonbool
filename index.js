@@ -242,6 +242,8 @@ export class PolygonBool extends maptalks.Class {
             }
             return target.copy()
         })
+        result.setSymbol(this.geometry.getSymbol())
+        result.setProperties(this.geometry.getProperties())
         this._result = result
     }
 
@@ -254,18 +256,28 @@ export class PolygonBool extends maptalks.Class {
         try {
             coords = boolean(coordsGeo, coordsTarget, this._boolType)
         } catch (e) {}
-        const symbol = this.geometry.getSymbol()
-        const properties = this.geometry.getProperties()
+        coords = this._removeUnexpectedLine(coords)
         if (!coords) return null
-        let result
-        if (coords.length === 1)
-            result = new maptalks.Polygon(coords[0], { symbol, properties })
-        else result = new maptalks.MultiPolygon(coords, { symbol, properties })
-        return result
+        return coords.length === 1
+            ? new maptalks.Polygon(coords[0])
+            : new maptalks.MultiPolygon(coords)
     }
 
     _getGeoJSONCoords(geo = this.geometry) {
         return geo.toGeoJSON().geometry.coordinates
+    }
+
+    _removeUnexpectedLine(coords) {
+        const safeCoords = coords.reduce((target1, coords1) => {
+            const safeCoords1 = coords1.reduce((target2, coords2) => {
+                if (coords2.length > 3) target2.push(coords2)
+                return target2
+            }, [])
+            if (safeCoords1.length > 0) target1.push(safeCoords1)
+            return target1
+        }, [])
+        if (safeCoords.length === 0) return null
+        return safeCoords
     }
 }
 

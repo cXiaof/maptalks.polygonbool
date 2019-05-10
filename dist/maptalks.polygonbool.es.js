@@ -3756,6 +3756,8 @@ var PolygonBool = function (_maptalks$Class) {
             }
             return target.copy();
         });
+        result.setSymbol(this.geometry.getSymbol());
+        result.setProperties(this.geometry.getProperties());
         this._result = result;
     };
 
@@ -3769,18 +3771,28 @@ var PolygonBool = function (_maptalks$Class) {
         try {
             coords = boolean(coordsGeo, coordsTarget, this._boolType);
         } catch (e) {}
-        var symbol = this.geometry.getSymbol();
-        var properties = this.geometry.getProperties();
+        coords = this._removeUnexpectedLine(coords);
         if (!coords) return null;
-        var result = void 0;
-        if (coords.length === 1) result = new maptalks.Polygon(coords[0], { symbol: symbol, properties: properties });else result = new maptalks.MultiPolygon(coords, { symbol: symbol, properties: properties });
-        return result;
+        return coords.length === 1 ? new maptalks.Polygon(coords[0]) : new maptalks.MultiPolygon(coords);
     };
 
     PolygonBool.prototype._getGeoJSONCoords = function _getGeoJSONCoords() {
         var geo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.geometry;
 
         return geo.toGeoJSON().geometry.coordinates;
+    };
+
+    PolygonBool.prototype._removeUnexpectedLine = function _removeUnexpectedLine(coords) {
+        var safeCoords = coords.reduce(function (target1, coords1) {
+            var safeCoords1 = coords1.reduce(function (target2, coords2) {
+                if (coords2.length > 3) target2.push(coords2);
+                return target2;
+            }, []);
+            if (safeCoords1.length > 0) target1.push(safeCoords1);
+            return target1;
+        }, []);
+        if (safeCoords.length === 0) return null;
+        return safeCoords;
     };
 
     return PolygonBool;
