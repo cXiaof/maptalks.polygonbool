@@ -3577,7 +3577,8 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
         if (this.geometry) this.remove();
-        this._task = task;
+        var boolTypes = ['intersection', 'union', 'diff', 'xor'];
+        this._boolType = boolTypes.indexOf(task);
     };
 
     PolygonBool.prototype._initialTask = function _initialTask(geometry, targets) {
@@ -3725,11 +3726,11 @@ var PolygonBool = function (_maptalks$Class) {
     PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit, hasTmp) {
         var _this4 = this;
 
-        var chooseNext = [];
-        this._chooseGeos.forEach(function (geo) {
+        var chooseNext = this._chooseGeos.reduce(function (target, geo) {
             var coord = _this4._getSafeCoords(geo);
-            if (!lodash_isequal(coordHit, coord)) chooseNext.push(geo);
-        });
+            if (!lodash_isequal(coordHit, coord)) target.push(geo);
+            return target;
+        }, []);
         if (!hasTmp && chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
     };
 
@@ -3749,12 +3750,11 @@ var PolygonBool = function (_maptalks$Class) {
         var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
 
         var result = void 0;
-        this._deals = [];
-        targets.forEach(function (target) {
+        this._deals = targets.map(function (target) {
             if (result !== null) {
                 if (result) result = _this6._getBoolResultGeo(target, result);else result = _this6._getBoolResultGeo(target);
             }
-            _this6._deals.push(target.copy());
+            return target.copy();
         });
         this._result = result;
     };
@@ -3767,7 +3767,7 @@ var PolygonBool = function (_maptalks$Class) {
         if (!this.options['includeSame'] && lodash_isequal(coordsGeo, coordsTarget)) return geo;
         var coords = void 0;
         try {
-            coords = boolean(coordsGeo, coordsTarget, this._getBoolType());
+            coords = boolean(coordsGeo, coordsTarget, this._boolType);
         } catch (e) {}
         var symbol = this.geometry.getSymbol();
         var properties = this.geometry.getProperties();
@@ -3781,16 +3781,6 @@ var PolygonBool = function (_maptalks$Class) {
         var geo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.geometry;
 
         return geo.toGeoJSON().geometry.coordinates;
-    };
-
-    PolygonBool.prototype._getBoolType = function _getBoolType() {
-        var obj = {
-            intersection: 0,
-            union: 1,
-            diff: 2,
-            xor: 3
-        };
-        return obj[this._task];
     };
 
     return PolygonBool;

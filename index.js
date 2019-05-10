@@ -62,7 +62,8 @@ export class PolygonBool extends maptalks.Class {
 
     _setTaskSafety(task) {
         if (this.geometry) this.remove()
-        this._task = task
+        const boolTypes = ['intersection', 'union', 'diff', 'xor']
+        this._boolType = boolTypes.indexOf(task)
     }
 
     _initialTask(geometry, targets) {
@@ -214,11 +215,11 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _setChooseGeosExceptHit(coordHit, hasTmp) {
-        let chooseNext = []
-        this._chooseGeos.forEach((geo) => {
+        const chooseNext = this._chooseGeos.reduce((target, geo) => {
             const coord = this._getSafeCoords(geo)
-            if (!isEqual(coordHit, coord)) chooseNext.push(geo)
-        })
+            if (!isEqual(coordHit, coord)) target.push(geo)
+            return target
+        }, [])
         if (!hasTmp && chooseNext.length === this._chooseGeos.length)
             this._chooseGeos.push(this.hitGeo)
         else this._chooseGeos = chooseNext
@@ -234,13 +235,12 @@ export class PolygonBool extends maptalks.Class {
 
     _dealWithTargets(targets = this._chooseGeos) {
         let result
-        this._deals = []
-        targets.forEach((target) => {
+        this._deals = targets.map((target) => {
             if (result !== null) {
                 if (result) result = this._getBoolResultGeo(target, result)
                 else result = this._getBoolResultGeo(target)
             }
-            this._deals.push(target.copy())
+            return target.copy()
         })
         this._result = result
     }
@@ -252,7 +252,7 @@ export class PolygonBool extends maptalks.Class {
             return geo
         let coords
         try {
-            coords = boolean(coordsGeo, coordsTarget, this._getBoolType())
+            coords = boolean(coordsGeo, coordsTarget, this._boolType)
         } catch (e) {}
         const symbol = this.geometry.getSymbol()
         const properties = this.geometry.getProperties()
@@ -266,16 +266,6 @@ export class PolygonBool extends maptalks.Class {
 
     _getGeoJSONCoords(geo = this.geometry) {
         return geo.toGeoJSON().geometry.coordinates
-    }
-
-    _getBoolType() {
-        const obj = {
-            intersection: 0,
-            union: 1,
-            diff: 2,
-            xor: 3
-        }
-        return obj[this._task]
     }
 }
 
