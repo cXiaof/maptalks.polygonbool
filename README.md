@@ -17,8 +17,14 @@ A tool to do boolean operation of Polygon and MultiPolygon.
 As a plugin, `maptalks.polygonbool` must be loaded after `maptalks.js` in browsers. You can also use `'import { PolygonBool } from "maptalks.polygonbool"` when developing with webpack.
 
 ```html
-<script type="text/javascript" src="https://unpkg.com/maptalks/dist/maptalks.min.js"></script>
-<script type="text/javascript" src="https://unpkg.com/maptalks.polygonbool/dist/maptalks.polygonbool.min.js"></script>
+<script
+    type="text/javascript"
+    src="https://unpkg.com/maptalks/dist/maptalks.min.js"
+></script>
+<script
+    type="text/javascript"
+    src="https://unpkg.com/maptalks.polygonbool/dist/maptalks.polygonbool.min.js"
+></script>
 <script>
     // new PolygonBool and layer
     const ms = new maptalks.PolygonBool()
@@ -40,12 +46,12 @@ new maptalks.PolygonBool()
     -   includeSame **boolean** decide if exclude geometry with same coordinates, default is true
     -   alterNative **Array** layer names of layer which you need to choose geometry on
 
-`intersection(geometry, targets)`
-`union(geometry, targets)`
-`diff(geometry, targets)`
-`xor(geometry, targets)`
+`intersection(geometry, targets)` // if no targets, start choose mode on map
+`union(geometry, targets)` // same as above
+`diff(geometry, targets)` // same as above
+`xor(geometry, targets)` // same as above
 
-`submit(callback)` callback can get two attr, the result and deals which be remove in task
+`submit(callback)` callback can get two attr, the result and deals(targets or choose-targets)
 `cancel()`
 `remove()`
 

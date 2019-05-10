@@ -89,102 +89,41 @@ const toolbar = new maptalks.control.Toolbar({
             click: () => {
                 layer.clear()
                 pb.cancel()
-                targets = []
             }
         }
     ]
 }).addTo(map)
 
 // Menu options
-const renderDemoResult = (geo) => {
+const renderDemoResult = (result, deals) => {
+    console.log(result, deals)
     const id = 'demo'
     const demoGeo = layer.getGeometryById(id)
     if (demoGeo) demoGeo.updateSymbol(defaultSymbol).setId(undefined)
-    if (geo) {
-        geo.addTo(layer).setId(id)
-        geo.updateSymbol({ polygonFill: 'pink', lineWidth: 2 })
+    if (result) {
+        result.addTo(layer).setId(id)
+        result.updateSymbol({ polygonFill: 'pink', lineWidth: 2 })
     }
 }
 
-let targets = []
 let result = {}
 const getOptions = (geometry) => {
+    const tasks = ['intersection', 'union', 'diff', 'xor']
+    const tasksItems = tasks.reduce((target, task) => {
+        if (target.length > 0) target.push('-')
+        target.push({
+            item: `operation: ${task}`,
+            click: () => pb[task](geometry)
+        })
+        return target
+    }, [])
     return {
         items: [
-            {
-                item: 'intersection',
-                click: () => {
-                    if (targets.length > 0)
-                        result = pb.intersection(geometry, targets)
-                    else result = pb.intersection(geometry)
-                    renderDemoResult(result)
-                }
-            },
+            ...tasksItems,
             '-',
-            {
-                item: 'union',
-                click: () => {
-                    if (targets.length > 0) result = pb.union(geometry, targets)
-                    else result = pb.union(geometry)
-                    renderDemoResult(result)
-                }
-            },
+            { item: 'submit', click: () => pb.submit(renderDemoResult) },
             '-',
-            {
-                item: 'diff',
-                click: () => {
-                    if (targets.length > 0) result = pb.diff(geometry, targets)
-                    else result = pb.diff(geometry)
-                    renderDemoResult(result)
-                }
-            },
-            '-',
-            {
-                item: 'xor',
-                click: () => {
-                    if (targets.length > 0) result = pb.xor(geometry, targets)
-                    else result = pb.xor(geometry)
-                    renderDemoResult(result)
-                }
-            },
-            '-',
-            {
-                item: 'push to targets',
-                click: () => targets.push(geometry)
-            },
-            '-',
-            {
-                item: 'submit',
-                click: () =>
-                    pb.submit((result, deals) => {
-                        renderDemoResult(result)
-                        console.log(result, deals)
-                        targets = []
-                    })
-            },
-            '-',
-            {
-                item: 'example: diff all',
-                click: () => {
-                    const id = '_diffAll'
-                    geometry.setId(id)
-                    let geos = []
-                    layer.getGeometries().forEach((geo) => {
-                        if (geo.getId() !== id) geos.push(geo)
-                    })
-                    const result = pb.diff(geometry, geos)
-                    renderDemoResult(result)
-                    geometry.remove()
-                }
-            },
-            '-',
-            {
-                item: 'cancel',
-                click: () => {
-                    pb.cancel()
-                    targets = []
-                }
-            }
+            { item: 'cancel', click: () => pb.cancel() }
         ]
     }
 }
