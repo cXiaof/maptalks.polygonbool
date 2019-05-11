@@ -1,5 +1,5 @@
 /*!
- * maptalks.polygonbool v0.1.0-beta.2
+ * maptalks.polygonbool v0.1.0-beta.3
  * LICENSE : MIT
  * (c) 2016-2019 maptalks.org
  */
@@ -3862,4 +3862,4 @@ PolygonBool.mergeOptions(options);
 
 export { PolygonBool };
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.2');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.3');
