@@ -1,5 +1,6 @@
 import boolean from 'martinez-polygon-clipping'
 import isEqual from 'lodash.isequal'
+import tail from 'lodash.tail'
 
 const options = {
     includeSame: true,
@@ -36,7 +37,8 @@ export class PolygonBool extends maptalks.Class {
     }
 
     submit(callback = () => false) {
-        const result = this._dealWithTargets()
+        const targets = tail(this._chooseGeos)
+        const result = this._dealWithTargets(targets)
         callback(result, this._deals)
         this.remove()
         return this
@@ -211,13 +213,14 @@ export class PolygonBool extends maptalks.Class {
         }
     }
 
-    _setChooseGeosExceptHit(coordHit, hasTmp) {
-        const chooseNext = this._chooseGeos.reduce((target, geo) => {
+    _setChooseGeosExceptHit(coordHit) {
+        const chooseNext = this._chooseGeos.reduce((target, geo, i) => {
             const coord = this._getSafeCoords(geo)
-            if (!isEqual(coordHit, coord)) target.push(geo)
+            if (i > 0 && isEqual(coordHit, coord)) return target
+            target.push(geo)
             return target
         }, [])
-        if (!hasTmp && chooseNext.length === this._chooseGeos.length)
+        if (chooseNext.length === this._chooseGeos.length)
             this._chooseGeos.push(this.hitGeo)
         else this._chooseGeos = chooseNext
     }
@@ -230,7 +233,7 @@ export class PolygonBool extends maptalks.Class {
         })
     }
 
-    _dealWithTargets(targets = this._chooseGeos) {
+    _dealWithTargets(targets) {
         let result
         this._deals = targets.map((target) => {
             if (result !== null) {

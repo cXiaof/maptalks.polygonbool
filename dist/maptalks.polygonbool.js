@@ -3504,6 +3504,66 @@ var lodash_isequal = createCommonjsModule(function (module, exports) {
   module.exports = isEqual;
 });
 
+/**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+
+/**
+ * The base implementation of `_.slice` without an iteratee call guard.
+ *
+ * @private
+ * @param {Array} array The array to slice.
+ * @param {number} [start=0] The start position.
+ * @param {number} [end=array.length] The end position.
+ * @returns {Array} Returns the slice of `array`.
+ */
+function baseSlice(array, start, end) {
+  var index = -1,
+      length = array.length;
+
+  if (start < 0) {
+    start = -start > length ? 0 : length + start;
+  }
+  end = end > length ? length : end;
+  if (end < 0) {
+    end += length;
+  }
+  length = start > end ? 0 : end - start >>> 0;
+  start >>>= 0;
+
+  var result = Array(length);
+  while (++index < length) {
+    result[index] = array[index + start];
+  }
+  return result;
+}
+
+/**
+ * Gets all but the first element of `array`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Array
+ * @param {Array} array The array to query.
+ * @returns {Array} Returns the slice of `array`.
+ * @example
+ *
+ * _.tail([1, 2, 3]);
+ * // => [2, 3]
+ */
+function tail(array) {
+  var length = array ? array.length : 0;
+  return length ? baseSlice(array, 1, length) : [];
+}
+
+var lodash_tail = tail;
+
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -3557,7 +3617,8 @@ var PolygonBool = function (_maptalks$Class) {
             return false;
         };
 
-        var result = this._dealWithTargets();
+        var targets = lodash_tail(this._chooseGeos);
+        var result = this._dealWithTargets(targets);
         callback(result, this._deals);
         this.remove();
         return this;
@@ -3727,15 +3788,16 @@ var PolygonBool = function (_maptalks$Class) {
         }
     };
 
-    PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit, hasTmp) {
+    PolygonBool.prototype._setChooseGeosExceptHit = function _setChooseGeosExceptHit(coordHit) {
         var _this4 = this;
 
-        var chooseNext = this._chooseGeos.reduce(function (target, geo) {
+        var chooseNext = this._chooseGeos.reduce(function (target, geo, i) {
             var coord = _this4._getSafeCoords(geo);
-            if (!lodash_isequal(coordHit, coord)) target.push(geo);
+            if (i > 0 && lodash_isequal(coordHit, coord)) return target;
+            target.push(geo);
             return target;
         }, []);
-        if (!hasTmp && chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
+        if (chooseNext.length === this._chooseGeos.length) this._chooseGeos.push(this.hitGeo);else this._chooseGeos = chooseNext;
     };
 
     PolygonBool.prototype._updateChooseGeos = function _updateChooseGeos() {
@@ -3748,10 +3810,8 @@ var PolygonBool = function (_maptalks$Class) {
         });
     };
 
-    PolygonBool.prototype._dealWithTargets = function _dealWithTargets() {
+    PolygonBool.prototype._dealWithTargets = function _dealWithTargets(targets) {
         var _this6 = this;
-
-        var targets = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._chooseGeos;
 
         var result = void 0;
         this._deals = targets.map(function (target) {
