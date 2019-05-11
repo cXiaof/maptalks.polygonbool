@@ -1,5 +1,5 @@
 /*!
- * maptalks.polygonbool v0.1.0-beta.1
+ * maptalks.polygonbool v0.1.0-beta.2
  * LICENSE : MIT
  * (c) 2016-2019 maptalks.org
  */
@@ -3557,8 +3557,8 @@ var PolygonBool = function (_maptalks$Class) {
             return false;
         };
 
-        this._dealWithTargets();
-        callback(this._result, this._deals);
+        var result = this._dealWithTargets();
+        callback(result, this._deals);
         this.remove();
         return this;
     };
@@ -3596,12 +3596,10 @@ var PolygonBool = function (_maptalks$Class) {
             } else {
                 this.geometry = geometry;
                 if (this._checkAvailGeoType(targets)) targets = [targets];
-                if (targets instanceof Array && targets.length > 0) this._dealWithTargets(targets);else this._result = geometry.copy();
-                if (this._result) {
-                    var result = this._result;
-                    this.remove();
-                    return result;
-                }
+                var result = geometry.copy();
+                if (targets instanceof Array && targets.length > 0) result = this._dealWithTargets(targets);
+                this.remove();
+                return result;
             }
         }
     };
@@ -3762,9 +3760,11 @@ var PolygonBool = function (_maptalks$Class) {
             }
             return target.copy();
         });
-        result.setSymbol(this.geometry.getSymbol());
-        result.setProperties(this.geometry.getProperties());
-        this._result = result;
+        if (result) {
+            result.setSymbol(this.geometry.getSymbol());
+            result.setProperties(this.geometry.getProperties());
+            return result;
+        }
     };
 
     PolygonBool.prototype._getBoolResultGeo = function _getBoolResultGeo(target) {
@@ -3810,6 +3810,6 @@ exports.PolygonBool = PolygonBool;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.1');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.2');
 
 })));

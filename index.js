@@ -36,8 +36,8 @@ export class PolygonBool extends maptalks.Class {
     }
 
     submit(callback = () => false) {
-        this._dealWithTargets()
-        callback(this._result, this._deals)
+        const result = this._dealWithTargets()
+        callback(result, this._deals)
         this.remove()
         return this
     }
@@ -75,14 +75,11 @@ export class PolygonBool extends maptalks.Class {
             } else {
                 this.geometry = geometry
                 if (this._checkAvailGeoType(targets)) targets = [targets]
+                let result = geometry.copy()
                 if (targets instanceof Array && targets.length > 0)
-                    this._dealWithTargets(targets)
-                else this._result = geometry.copy()
-                if (this._result) {
-                    const result = this._result
-                    this.remove()
-                    return result
-                }
+                    result = this._dealWithTargets(targets)
+                this.remove()
+                return result
             }
         }
     }
@@ -242,9 +239,11 @@ export class PolygonBool extends maptalks.Class {
             }
             return target.copy()
         })
-        result.setSymbol(this.geometry.getSymbol())
-        result.setProperties(this.geometry.getProperties())
-        this._result = result
+        if (result) {
+            result.setSymbol(this.geometry.getSymbol())
+            result.setProperties(this.geometry.getProperties())
+            return result
+        }
     }
 
     _getBoolResultGeo(target, geo = this.geometry) {
