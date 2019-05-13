@@ -145,7 +145,7 @@ const textPanel = new maptalks.control.Panel({
         点击<b>Draw</b>或<b>Draw Once</b>里的类型开始画相应的图形， 点击<b>Stop</b>停止。<br />
         右键你要操作的图形，选择一种模式（交集/并集/排除/异或），然后开<br />
         始选择一个或多个目标图形，被命中时图形会变色。<br />
-        最后再次右键你要分隔的图形，点击<b>submit</b>查看效果。
+        最后再次右键你要操作的图形，点击<b>submit</b>查看效果。
     `,
     closeButton: true
 })
