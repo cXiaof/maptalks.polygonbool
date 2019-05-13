@@ -95,8 +95,8 @@ const toolbar = new maptalks.control.Toolbar({
 }).addTo(map)
 
 // Menu options
-const renderDemoResult = (result, deals) => {
-    console.log(result, deals)
+const renderDemoResult = (result, deals, task) => {
+    console.log(result, deals, task)
     const id = 'demo'
     const demoGeo = layer.getGeometryById(id)
     if (demoGeo) demoGeo.updateSymbol(defaultSymbol).setId(undefined)

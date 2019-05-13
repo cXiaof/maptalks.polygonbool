@@ -10,29 +10,25 @@ A tool to do boolean operation of Polygon and MultiPolygon.
 
 -   Install with npm: `npm install maptalks.polygonbool`.
 -   Download from [dist directory](https://github.com/cXiaof/maptalks.polygonbool/tree/master/dist).
--   Use unpkg CDN: `https://unpkg.com/maptalks.polygonbool/dist/maptalks.polygonbool.min.js`
+-   Use unpkg CDN: `https://cdn.jsdelivr.net/npm/maptalks.polygonbool/dist/maptalks.polygonbool.min.js`
 
 ## Usage
 
 As a plugin, `maptalks.polygonbool` must be loaded after `maptalks.js` in browsers. You can also use `'import { PolygonBool } from "maptalks.polygonbool"` when developing with webpack.
 
 ```html
-<script
-    type="text/javascript"
-    src="https://unpkg.com/maptalks/dist/maptalks.min.js"
-></script>
-<script
-    type="text/javascript"
-    src="https://unpkg.com/maptalks.polygonbool/dist/maptalks.polygonbool.min.js"
-></script>
-<script>
-    // new PolygonBool and layer
-    const ms = new maptalks.PolygonBool()
-    const layer = new maptalks.VectorLayer('v').addTo(map)
+<!-- ... -->
+<script src="https://cdn.jsdelivr.net/npm/maptalks.geosplit/dist/maptalks.polygonbool.min.js"></script>
+<!-- ... -->
+```
 
-    // use PolygonBool API, targets is not necessary parameters and if no targets user will choose geometry on the map
-    // get details in API Reference
-</script>
+```javascript
+// new PolygonBool and layer
+const ms = new maptalks.PolygonBool()
+const layer = new maptalks.VectorLayer('v').addTo(map)
+
+// use PolygonBool API, targets is not necessary parameters and if no targets user will choose geometry on the map
+// get details in API Reference
 ```
 
 ## API Reference
@@ -46,12 +42,12 @@ new maptalks.PolygonBool()
     -   includeSame **boolean** decide if exclude geometry with same coordinates, default is true
     -   alterNative **Array** layer names of layer which you need to choose geometry on
 
-`intersection(geometry, targets)` // if no targets, start choose mode on map
-`union(geometry, targets)` // same as above
-`diff(geometry, targets)` // same as above
-`xor(geometry, targets)` // same as above
+`intersection(geometry, targets)` if no targets, start choose mode on map
+`union(geometry, targets)` same as above
+`diff(geometry, targets)` same as above
+`xor(geometry, targets)` same as above
 
-`submit(callback)` callback can get two attr, the result and deals(targets or choose-targets)
+`submit(callback)` callback can get three attr, the result, deals(targets or choose-targets) and task name.
 `cancel()`
 `remove()`
 

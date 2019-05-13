@@ -1,13 +1,15 @@
 /*!
- * maptalks.polygonbool v0.1.0-beta.3
+ * maptalks.polygonbool v0.1.0-beta.4
  * LICENSE : MIT
  * (c) 2016-2019 maptalks.org
  */
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.maptalks = global.maptalks || {})));
-}(this, (function (exports) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('lodash.tail')) :
+	typeof define === 'function' && define.amd ? define(['exports', 'lodash.tail'], factory) :
+	(factory((global.maptalks = global.maptalks || {}),global.tail));
+}(this, (function (exports,tail) { 'use strict';
+
+tail = tail && tail.hasOwnProperty('default') ? tail['default'] : tail;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -3504,66 +3506,6 @@ var lodash_isequal = createCommonjsModule(function (module, exports) {
   module.exports = isEqual;
 });
 
-/**
- * lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="npm" -o ./`
- * Copyright jQuery Foundation and other contributors <https://jquery.org/>
- * Released under MIT license <https://lodash.com/license>
- * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
- * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- */
-
-/**
- * The base implementation of `_.slice` without an iteratee call guard.
- *
- * @private
- * @param {Array} array The array to slice.
- * @param {number} [start=0] The start position.
- * @param {number} [end=array.length] The end position.
- * @returns {Array} Returns the slice of `array`.
- */
-function baseSlice(array, start, end) {
-  var index = -1,
-      length = array.length;
-
-  if (start < 0) {
-    start = -start > length ? 0 : length + start;
-  }
-  end = end > length ? length : end;
-  if (end < 0) {
-    end += length;
-  }
-  length = start > end ? 0 : end - start >>> 0;
-  start >>>= 0;
-
-  var result = Array(length);
-  while (++index < length) {
-    result[index] = array[index + start];
-  }
-  return result;
-}
-
-/**
- * Gets all but the first element of `array`.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Array
- * @param {Array} array The array to query.
- * @returns {Array} Returns the slice of `array`.
- * @example
- *
- * _.tail([1, 2, 3]);
- * // => [2, 3]
- */
-function tail(array) {
-  var length = array ? array.length : 0;
-  return length ? baseSlice(array, 1, length) : [];
-}
-
-var lodash_tail = tail;
-
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -3617,9 +3559,9 @@ var PolygonBool = function (_maptalks$Class) {
             return false;
         };
 
-        var targets = lodash_tail(this._chooseGeos);
+        var targets = tail(this._chooseGeos);
         var result = this._dealWithTargets(targets);
-        callback(result, this._deals);
+        callback(result, this._deals, this._task);
         this.remove();
         return this;
     };
@@ -3645,6 +3587,7 @@ var PolygonBool = function (_maptalks$Class) {
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
         if (this.geometry) this.remove();
         var boolTypes = ['intersection', 'union', 'diff', 'xor'];
+        this._task = task;
         this._boolType = boolTypes.indexOf(task);
     };
 
@@ -3870,6 +3813,6 @@ exports.PolygonBool = PolygonBool;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.3');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.4');
 
 })));

@@ -39,7 +39,7 @@ export class PolygonBool extends maptalks.Class {
     submit(callback = () => false) {
         const targets = tail(this._chooseGeos)
         const result = this._dealWithTargets(targets)
-        callback(result, this._deals)
+        callback(result, this._deals, this._task)
         this.remove()
         return this
     }
@@ -65,6 +65,7 @@ export class PolygonBool extends maptalks.Class {
     _setTaskSafety(task) {
         if (this.geometry) this.remove()
         const boolTypes = ['intersection', 'union', 'diff', 'xor']
+        this._task = task
         this._boolType = boolTypes.indexOf(task)
     }
 
