@@ -33,7 +33,7 @@
   "devDependencies": {
     "babel-eslint": "^10.0.1",
     "babel-preset-env": "^1.7.0",
-    "gulp": "^4.0.1",
+    "gulp": "^4.0.2",
     "maptalks": "^0.44.0",
     "maptalks-build-helpers": "^0.4.5"
   }

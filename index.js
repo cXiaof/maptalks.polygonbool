@@ -114,8 +114,8 @@ export class PolygonBool extends maptalks.Class {
     _registerMapEvents() {
         if (!this._mousemove) {
             const map = this._map
-            this._mousemove = (e) => this._mousemoveEvents(e)
-            this._click = (e) => this._clickEvents(e)
+            this._mousemove = this._mousemoveEvents.bind(this)
+            this._click = this._clickEvents.bind(this)
             map.on('mousemove', this._mousemove, this)
             map.on('click', this._click, this)
         }

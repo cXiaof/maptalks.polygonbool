@@ -10,7 +10,7 @@ A tool to do boolean operation of Polygon and MultiPolygon.
 
 -   Install with npm: `npm install maptalks.polygonbool`.
 -   Download from [dist directory](https://github.com/cXiaof/maptalks.polygonbool/tree/master/dist).
--   Use unpkg CDN: `https://cdn.jsdelivr.net/npm/maptalks.polygonbool/dist/maptalks.polygonbool.min.js`
+-   Use jsdelivr CDN: `https://cdn.jsdelivr.net/npm/maptalks.polygonbool/dist/maptalks.polygonbool.min.js`
 
 ## Usage
 
