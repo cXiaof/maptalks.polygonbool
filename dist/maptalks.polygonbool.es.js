@@ -1,7 +1,10 @@
 /*!
- * maptalks.polygonbool v0.1.0-beta.4
+ * maptalks.polygonbool v0.1.0
  * LICENSE : MIT
- * (c) 2016-2019 maptalks.org
+ * (c) 2016-2021 maptalks.org
+ */
+/*!
+ * requires maptalks@>=0.31.0 
  */
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -3857,4 +3860,4 @@ PolygonBool.mergeOptions(options);
 
 export { PolygonBool };
 
-typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0-beta.4');
+typeof console !== 'undefined' && console.log('maptalks.polygonbool v0.1.0, requires maptalks@>=0.31.0.');

@@ -9,17 +9,17 @@ const map = new maptalks.Map('map', {
         attribution:
             '&copy; <a href="http://osm.org">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>',
         maxAvailableZoom: 18,
-        placeholder: true
+        placeholder: true,
     }),
     scaleControl: { position: 'bottom-right', metric: true, imperial: true },
     zoomControl: {
         position: { top: 80, right: 20 },
         slider: false,
-        zoomLevel: true
+        zoomLevel: true,
     },
     spatialReference: {
         projection: 'EPSG:3857',
-        resolutions: (function() {
+        resolutions: (function () {
             const resolutions = []
             const d = 2 * 6378137 * Math.PI
             for (let i = 0; i < 22; i++) {
@@ -31,12 +31,12 @@ const map = new maptalks.Map('map', {
             top: 6378137 * Math.PI,
             bottom: -6378137 * Math.PI,
             left: -6378137 * Math.PI,
-            right: 6378137 * Math.PI
-        }
-    }
+            right: 6378137 * Math.PI,
+        },
+    },
 })
 new maptalks.CompassControl({
-    position: 'top-right'
+    position: 'top-right',
 }).addTo(map)
 
 const pb = new maptalks.PolygonBool()
@@ -53,7 +53,7 @@ const defaultSymbol = {
     polygonFill: '#ebebeb',
     polygonOpacity: 0.2,
     lineColor: 'black',
-    lineWidth: 1
+    lineWidth: 1,
 }
 const drawTool = new maptalks.DrawTool({ mode: 'Point' })
     .setSymbol(defaultSymbol)
@@ -73,7 +73,7 @@ const getDrawModes = (attr) =>
         click: () => {
             once = attr
             drawTool.setMode(mode).enable()
-        }
+        },
     }))
 const children = getDrawModes(false)
 const childrenOnce = getDrawModes(true)
@@ -89,9 +89,9 @@ const toolbar = new maptalks.control.Toolbar({
             click: () => {
                 layer.clear()
                 pb.cancel()
-            }
-        }
-    ]
+            },
+        },
+    ],
 }).addTo(map)
 
 // Menu options
@@ -113,7 +113,7 @@ const getOptions = (geometry) => {
         if (target.length > 0) target.push('-')
         target.push({
             item: `operation: ${task}`,
-            click: () => pb[task](geometry)
+            click: () => pb[task](geometry),
         })
         return target
     }, [])
@@ -123,8 +123,8 @@ const getOptions = (geometry) => {
             '-',
             { item: 'submit', click: () => pb.submit(renderDemoResult) },
             '-',
-            { item: 'cancel', click: () => pb.cancel() }
-        ]
+            { item: 'cancel', click: () => pb.cancel() },
+        ],
     }
 }
 
@@ -147,6 +147,6 @@ const textPanel = new maptalks.control.Panel({
         始选择一个或多个目标图形，被命中时图形会变色。<br />
         最后再次右键你要操作的图形，点击<b>submit</b>查看效果。
     `,
-    closeButton: true
+    closeButton: true,
 })
 map.addControl(textPanel)

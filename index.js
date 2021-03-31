@@ -4,7 +4,7 @@ import tail from 'lodash.tail'
 
 const options = {
     includeSame: true,
-    alterNative: []
+    alterNative: [],
 }
 
 export class PolygonBool extends maptalks.Class {
@@ -136,7 +136,7 @@ export class PolygonBool extends maptalks.Class {
             {
                 coordinate: e.coordinate,
                 tolerance: 0.0001,
-                layers: [this.layer.getId(), ...this.options['alterNative']]
+                layers: [this.layer.getId(), ...this.options['alterNative']],
             },
             (hits) =>
                 hits.forEach((geo) => {
