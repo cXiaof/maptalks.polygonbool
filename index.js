@@ -2,18 +2,19 @@ import boolean from 'martinez-polygon-clipping'
 import isEqual from 'lodash.isequal'
 import tail from 'lodash.tail'
 
+const uid = 'polygonbool@cXiaof'
 const options = {
     includeSame: true,
     alterNative: [],
+    colorHit: '#ffa400',
+    colorChosen: '#00bcd4',
 }
 
 export class PolygonBool extends maptalks.Class {
     constructor(options) {
         super(options)
-        this._layerName = `${maptalks.INTERNAL_LAYER_PREFIX}_POLYGONBOOL`
+        this._layerName = `${maptalks.INTERNAL_LAYER_PREFIX}${uid}`
         this._chooseGeos = []
-        this._colorHit = '#ffa400'
-        this._colorChoose = '#00bcd4'
     }
 
     intersection(geometry, targets) {
@@ -41,16 +42,13 @@ export class PolygonBool extends maptalks.Class {
         const result = this._dealWithTargets(targets)
         callback(result, this._deals, this._task)
         this.remove()
-        return this
     }
 
     cancel() {
         this.remove()
-        return this
     }
 
     remove() {
-        const map = this._map
         if (this._chooseLayer) this._chooseLayer.remove()
         this._chooseGeos = []
         this._offMapEvents()
@@ -59,7 +57,6 @@ export class PolygonBool extends maptalks.Class {
         delete this._chooseLayer
         delete this._mousemove
         delete this._click
-        return this
     }
 
     _setTaskSafety(task) {
@@ -112,21 +109,13 @@ export class PolygonBool extends maptalks.Class {
     }
 
     _registerMapEvents() {
-        if (!this._mousemove) {
-            const map = this._map
-            this._mousemove = this._mousemoveEvents.bind(this)
-            this._click = this._clickEvents.bind(this)
-            map.on('mousemove', this._mousemove, this)
-            map.on('click', this._click, this)
-        }
+        map.on('mousemove', this._mousemoveEvents, this)
+        map.on('click', this._clickEvents, this)
     }
 
     _offMapEvents() {
-        if (this._mousemove) {
-            const map = this._map
-            map.off('mousemove', this._mousemove, this)
-            map.off('click', this._click, this)
-        }
+        map.off('mousemove', this._mousemoveEvents, this)
+        map.off('click', this._clickEvents, this)
     }
 
     _mousemoveEvents(e) {
@@ -185,7 +174,7 @@ export class PolygonBool extends maptalks.Class {
 
     _getSymbolOrDefault(geo, type) {
         let symbol = geo.getSymbol()
-        const color = this[`_color${type}`]
+        const color = this.options[`color${type}`]
         const lineWidth = 4
         if (symbol) {
             for (let key in symbol) {
@@ -206,7 +195,7 @@ export class PolygonBool extends maptalks.Class {
         return result.updateSymbol(symbol).addTo(this._chooseLayer)
     }
 
-    _clickEvents(e) {
+    _clickEvents() {
         if (this.hitGeo) {
             const coordHit = this._getSafeCoords(this.hitGeo)
             this._setChooseGeosExceptHit(coordHit)
@@ -229,7 +218,7 @@ export class PolygonBool extends maptalks.Class {
     _updateChooseGeos() {
         this._chooseLayer.clear()
         this._chooseGeos.forEach((geo) => {
-            const chooseSymbol = this._getSymbolOrDefault(geo, 'Choose')
+            const chooseSymbol = this._getSymbolOrDefault(geo, 'Chosen')
             this._copyGeoUpdateSymbol(geo, chooseSymbol)
         })
     }

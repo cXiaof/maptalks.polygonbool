@@ -3569,9 +3569,12 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
+var uid = 'polygonbool@cXiaof';
 var options = {
     includeSame: true,
-    alterNative: []
+    alterNative: [],
+    colorHit: '#ffa400',
+    colorChosen: '#00bcd4'
 };
 
 var PolygonBool = function (_maptalks$Class) {
@@ -3582,10 +3585,8 @@ var PolygonBool = function (_maptalks$Class) {
 
         var _this = _possibleConstructorReturn(this, _maptalks$Class.call(this, options));
 
-        _this._layerName = maptalks.INTERNAL_LAYER_PREFIX + '_POLYGONBOOL';
+        _this._layerName = '' + maptalks.INTERNAL_LAYER_PREFIX + uid;
         _this._chooseGeos = [];
-        _this._colorHit = '#ffa400';
-        _this._colorChoose = '#00bcd4';
         return _this;
     }
 
@@ -3618,16 +3619,13 @@ var PolygonBool = function (_maptalks$Class) {
         var result = this._dealWithTargets(targets);
         callback(result, this._deals, this._task);
         this.remove();
-        return this;
     };
 
     PolygonBool.prototype.cancel = function cancel() {
         this.remove();
-        return this;
     };
 
     PolygonBool.prototype.remove = function remove() {
-        var map = this._map;
         if (this._chooseLayer) this._chooseLayer.remove();
         this._chooseGeos = [];
         this._offMapEvents();
@@ -3636,7 +3634,6 @@ var PolygonBool = function (_maptalks$Class) {
         delete this._chooseLayer;
         delete this._mousemove;
         delete this._click;
-        return this;
     };
 
     PolygonBool.prototype._setTaskSafety = function _setTaskSafety(task) {
@@ -3682,21 +3679,13 @@ var PolygonBool = function (_maptalks$Class) {
     };
 
     PolygonBool.prototype._registerMapEvents = function _registerMapEvents() {
-        if (!this._mousemove) {
-            var map = this._map;
-            this._mousemove = this._mousemoveEvents.bind(this);
-            this._click = this._clickEvents.bind(this);
-            map.on('mousemove', this._mousemove, this);
-            map.on('click', this._click, this);
-        }
+        map.on('mousemove', this._mousemoveEvents, this);
+        map.on('click', this._clickEvents, this);
     };
 
     PolygonBool.prototype._offMapEvents = function _offMapEvents() {
-        if (this._mousemove) {
-            var map = this._map;
-            map.off('mousemove', this._mousemove, this);
-            map.off('click', this._click, this);
-        }
+        map.off('mousemove', this._mousemoveEvents, this);
+        map.off('click', this._clickEvents, this);
     };
 
     PolygonBool.prototype._mousemoveEvents = function _mousemoveEvents(e) {
@@ -3754,7 +3743,7 @@ var PolygonBool = function (_maptalks$Class) {
 
     PolygonBool.prototype._getSymbolOrDefault = function _getSymbolOrDefault(geo, type) {
         var symbol = geo.getSymbol();
-        var color = this['_color' + type];
+        var color = this.options['color' + type];
         var lineWidth = 4;
         if (symbol) {
             for (var key in symbol) {
@@ -3772,7 +3761,7 @@ var PolygonBool = function (_maptalks$Class) {
         return result.updateSymbol(symbol).addTo(this._chooseLayer);
     };
 
-    PolygonBool.prototype._clickEvents = function _clickEvents(e) {
+    PolygonBool.prototype._clickEvents = function _clickEvents() {
         if (this.hitGeo) {
             var coordHit = this._getSafeCoords(this.hitGeo);
             this._setChooseGeosExceptHit(coordHit);
@@ -3797,7 +3786,7 @@ var PolygonBool = function (_maptalks$Class) {
 
         this._chooseLayer.clear();
         this._chooseGeos.forEach(function (geo) {
-            var chooseSymbol = _this4._getSymbolOrDefault(geo, 'Choose');
+            var chooseSymbol = _this4._getSymbolOrDefault(geo, 'Chosen');
             _this4._copyGeoUpdateSymbol(geo, chooseSymbol);
         });
     };

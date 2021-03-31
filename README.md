@@ -43,12 +43,17 @@ new maptalks.PolygonBool()
     -   alterNative **Array** layer names of layer which you need to choose geometry on
 
 `intersection(geometry, targets)` if no targets, start choose mode on map
+
 `union(geometry, targets)` same as above
+
 `diff(geometry, targets)` same as above
+
 `xor(geometry, targets)` same as above
 
 `submit(callback)` callback can get three attr, the result, deals(targets or choose-targets) and task name.
+
 `cancel()`
+
 `remove()`
 
 ## Contributing
